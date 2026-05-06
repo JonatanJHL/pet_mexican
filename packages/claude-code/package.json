@@ -1,0 +1,22 @@
+{
+  "name": "@xolito/claude-code",
+  "version": "0.1.0",
+  "description": "🦎 Xolito en tu terminal de Claude Code",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "xolito": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@xolito/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  },
+  "files": ["dist"]
+}

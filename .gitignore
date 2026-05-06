@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.js.map
+*.d.ts.map
+.DS_Store
+.env
+.env.local
+*.vsix
+pnpm-lock.yaml

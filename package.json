@@ -1,0 +1,23 @@
+{
+  "name": "xolito",
+  "version": "0.0.1",
+  "private": true,
+  "description": "🦎 Xolito — tu ajolote regañón favorito para la terminal",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "dev": "npm run dev --workspaces --if-present",
+    "lint": "eslint packages/*/src/**/*.ts",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "xolito-vscode",
+  "displayName": "Xolito 🦎",
+  "description": "Tu ajolote regañón para VS Code. Con cariño y sarcasmo.",
+  "version": "0.1.0",
+  "publisher": "xolito",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "keywords": ["pet", "mascota", "ajolote", "mexicano", "fun"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "xolito.show",
+        "title": "🦎 Mostrar Xolito"
+      },
+      {
+        "command": "xolito.greet",
+        "title": "🦎 Xolito: ¡Hola!"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "@xolito/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  },
+  "files": ["dist"]
+}
