@@ -1,240 +1,157 @@
 // ============================================================
-//  xolito/packages/vscode/src/extension.ts
-//  Extensión de VS Code para Xolito
-//  Muestra al ajolote en el status bar y notificaciones
+//  xolito/packages/vscode/src/extension.ts  (v2 — con LSP real)
 // ============================================================
 
 import * as vscode from 'vscode';
 import { Xolito } from '@xolito/core';
-import type { XolitoEvent } from '@xolito/core';
+import { generateSpriteSVG } from '@xolito/core/sprites/generator';
+import type { XolitoEvent, XolitoMood } from '@xolito/core';
+import { DiagnosticsWatcher } from './diagnostics-watcher.js';
 
-const MOOD_ICONS: Record<string, string> = {
-  idle:    '🦎',
-  happy:   '🦎✨',
-  mad:     '🦎💢',
-  sleepy:  '🦎💤',
-  sassy:   '🦎👀',
-  proud:   '🦎⭐',
-  worried: '🦎😬',
-  hyped:   '🦎🔥',
-  tired:   '🦎😮‍💨',
-  judging: '🦎🧐',
+let xolito:      Xolito;
+let statusBar:   vscode.StatusBarItem;
+let diagWatcher: DiagnosticsWatcher;
+let idleTimer:   NodeJS.Timeout | undefined;
+let panel:       vscode.WebviewPanel | undefined;
+
+const NOTIF_COOLDOWN = 8000;
+let   lastNotifTime  = 0;
+
+const MOOD_ICONS: Record<XolitoMood, string> = {
+  idle:'🦎', happy:'🦎✨', mad:'🦎💢', sleepy:'🦎💤', sassy:'🦎👀',
+  proud:'🦎⭐', worried:'🦎😬', hyped:'🦎🔥', tired:'🦎😮‍💨', judging:'🦎🧐',
 };
-
-let xolito: Xolito;
-let statusBarItem: vscode.StatusBarItem;
-let idleTimer: NodeJS.Timeout | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
   xolito = new Xolito({ spiciness: 3, language: 'spanglish' });
 
-  // ── Status bar ─────────────────────────────────────────
-  statusBarItem = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Right, 100
-  );
-  statusBarItem.command = 'xolito.show';
-  updateStatusBar('¡Hola!');
-  statusBarItem.show();
+  statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  statusBar.command = 'xolito.show';
+  statusBar.show();
 
-  // ── Comandos ────────────────────────────────────────────
+  diagWatcher = new DiagnosticsWatcher((event, detail) => fireEvent(event, detail));
+  diagWatcher.start();
+
   context.subscriptions.push(
-    vscode.commands.registerCommand('xolito.show', showXolito),
+    vscode.commands.registerCommand('xolito.show',  showPanel),
     vscode.commands.registerCommand('xolito.greet', () => fireEvent('greeted')),
-    statusBarItem,
-  );
-
-  // ── Watchers de archivos ─────────────────────────────────
-  context.subscriptions.push(
+    statusBar,
+    { dispose: () => diagWatcher.stop() },
     vscode.workspace.onDidSaveTextDocument(onSave),
-  );
-
-  // ── Task watcher (build/test) ────────────────────────────
-  context.subscriptions.push(
     vscode.tasks.onDidEndTaskProcess(onTaskEnd),
-  );
-
-  // ── Git watcher (via SCM) ────────────────────────────────
-  // Detectar push a main se hace via terminal watcher
-  context.subscriptions.push(
     vscode.window.onDidWriteTerminalData(onTerminalData),
-  );
-
-  // ── Idle detector ────────────────────────────────────────
-  resetIdleTimer();
-  context.subscriptions.push(
     vscode.window.onDidChangeTextEditorSelection(() => resetIdleTimer()),
     vscode.workspace.onDidChangeTextDocument(() => resetIdleTimer()),
   );
 
-  // Saludo inicial
-  const { text } = xolito.react('greeted');
-  notify(text, 'info');
-  updateStatusBar(text);
+  fireEvent('greeted');
+  resetIdleTimer();
 }
-
-// ── Handlers ──────────────────────────────────────────────────
 
 function onSave(doc: vscode.TextDocument): void {
   const text = doc.getText();
-
-  // ¿Tiene console.log?
-  if (/console\.log/.test(text)) {
-    fireEvent('console_log_left');
-    return;
-  }
-  // ¿Tiene TODO viejito?
-  if (/\/\/\s*TODO/.test(text)) {
-    fireEvent('todo_comment');
-    return;
-  }
-  // ¿Función muy larga? (heurística simple)
-  const longFunc = /function\s+\w+[^{]*\{[^}]{2000,}/s.test(text);
-  if (longFunc) {
-    fireEvent('long_function');
-    return;
-  }
-  // ¿Sin comentarios en archivos .ts/.js?
-  if (doc.languageId === 'typescript' || doc.languageId === 'javascript') {
-    const hasComments = /\/\/|\/\*/.test(text);
-    if (!hasComments && text.length > 500) {
-      fireEvent('save_no_comments');
-    }
-  }
+  if (/console\.log/.test(text))  { fireEvent('console_log_left'); return; }
+  if (/\/\/\s*TODO/i.test(text))  { fireEvent('todo_comment');     return; }
+  if (/\{[^{}]{3000,}\}/s.test(text)) { fireEvent('long_function'); return; }
+  const isCode = ['typescript','javascript','typescriptreact','javascriptreact'].includes(doc.languageId);
+  if (isCode && !/\/\/|\/\*/.test(text) && text.length > 400) fireEvent('save_no_comments');
 }
 
 function onTaskEnd(e: vscode.TaskProcessEndEvent): void {
   const name = e.execution.task.name.toLowerCase();
-  const ok = e.exitCode === 0;
-
-  if (name.includes('build') || name.includes('compile')) {
-    fireEvent(ok ? 'build_success' : 'build_fail');
-  } else if (name.includes('test')) {
-    fireEvent(ok ? 'test_pass' : 'test_fail');
-  }
+  const ok   = e.exitCode === 0;
+  if (name.includes('build') || name.includes('tsc'))   fireEvent(ok ? 'build_success' : 'build_fail');
+  else if (name.includes('test') || name.includes('vitest')) fireEvent(ok ? 'test_pass' : 'test_fail');
 }
 
 function onTerminalData(e: vscode.TerminalDataWriteEvent): void {
-  const data = e.data;
-
-  if (/git push.*--force/.test(data)) {
-    fireEvent('git_force_push');
-  } else if (/git push.*origin main/.test(data) || /git push.*origin master/.test(data)) {
-    fireEvent('push_to_main');
-  } else if (/npm install|yarn|pnpm install/.test(data)) {
-    fireEvent('npm_install');
-  } else if (/CONFLICT/.test(data)) {
-    fireEvent('merge_conflict');
-  } else if (/SyntaxError|syntax error/i.test(data)) {
-    fireEvent('syntax_error');
-  }
-
-  // Late night coding
-  const hour = new Date().getHours();
-  if (hour >= 23 || hour < 4) {
-    fireEvent('late_night_coding');
-  }
-
-  // Weekend
-  const day = new Date().getDay();
-  if (day === 0 || day === 6) {
-    fireEvent('weekend_coding');
-  }
+  const d = e.data;
+  if (/git push.*--force/i.test(d))                      fireEvent('git_force_push');
+  else if (/git push.*origin (main|master)/i.test(d))    fireEvent('push_to_main');
+  else if (/npm install|pnpm install|yarn add/i.test(d)) fireEvent('npm_install');
+  else if (/CONFLICT \(content\)/i.test(d))              fireEvent('merge_conflict');
+  const h = new Date().getHours(), day = new Date().getDay();
+  if (h >= 23 || h < 4)  fireEvent('late_night_coding');
+  if (day === 0 || day === 6) fireEvent('weekend_coding');
 }
 
 function resetIdleTimer(): void {
   if (idleTimer) clearTimeout(idleTimer);
-
-  idleTimer = setTimeout(() => {
-    const event = xolito.checkIdle();
-    if (event) fireEvent(event);
-  }, 10 * 60 * 1000); // 10 minutos
+  idleTimer = setTimeout(() => { const ev = xolito.checkIdle(); if (ev) fireEvent(ev); }, 600000);
 }
 
-// ── Helpers ────────────────────────────────────────────────────
-
-function fireEvent(event: XolitoEvent): void {
+function fireEvent(event: XolitoEvent, _detail?: string): void {
   const { text } = xolito.react(event);
   updateStatusBar(text);
-  notify(text, getMoodSeverity(xolito.getMood()));
+  const now = Date.now();
+  if (now - lastNotifTime < NOTIF_COOLDOWN) return;
+  lastNotifTime = now;
+  const sev = getMoodSeverity(xolito.getMood());
+  const msg = `🦎 Xolito: ${text}`;
+  if (sev === 'error')        vscode.window.showErrorMessage(msg);
+  else if (sev === 'warning') vscode.window.showWarningMessage(msg);
+  else                         vscode.window.showInformationMessage(msg);
+  if (panel) updatePanel();
 }
 
 function updateStatusBar(message: string): void {
-  const icon = MOOD_ICONS[xolito.getMood()] ?? '🦎';
-  const short = message.length > 40 ? message.slice(0, 37) + '...' : message;
-  statusBarItem.text = `${icon} ${short}`;
-  statusBarItem.tooltip = message;
+  const icon  = MOOD_ICONS[xolito.getMood()] ?? '🦎';
+  statusBar.text    = `${icon} ${message.length > 38 ? message.slice(0,35)+'...' : message}`;
+  statusBar.tooltip = message;
 }
 
-function notify(
-  message: string,
-  level: 'info' | 'warning' | 'error' = 'info'
-): void {
-  if (level === 'error') {
-    vscode.window.showErrorMessage(`🦎 Xolito: ${message}`);
-  } else if (level === 'warning') {
-    vscode.window.showWarningMessage(`🦎 Xolito: ${message}`);
-  } else {
-    vscode.window.showInformationMessage(`🦎 Xolito: ${message}`);
-  }
-}
-
-function getMoodSeverity(mood: string): 'info' | 'warning' | 'error' {
-  if (['mad', 'tired'].includes(mood)) return 'error';
-  if (['worried', 'judging'].includes(mood)) return 'warning';
+function getMoodSeverity(mood: XolitoMood): 'info' | 'warning' | 'error' {
+  if (['mad','tired'].includes(mood))       return 'error';
+  if (['worried','judging'].includes(mood)) return 'warning';
   return 'info';
 }
 
-function showXolito(): void {
-  const panel = vscode.window.createWebviewPanel(
-    'xolito',
-    '🦎 Xolito',
-    vscode.ViewColumn.Beside,
-    {}
-  );
-  panel.webview.html = getWebviewContent();
+function showPanel(): void {
+  if (panel) { panel.reveal(vscode.ViewColumn.Beside); updatePanel(); return; }
+  panel = vscode.window.createWebviewPanel('xolito','🦎 Xolito', vscode.ViewColumn.Beside, { enableScripts: true });
+  panel.onDidDispose(() => { panel = undefined; });
+  updatePanel();
 }
 
-function getWebviewContent(): string {
-  const mood = xolito.getMood();
-  const icon = MOOD_ICONS[mood] ?? '🦎';
-  const errorCount = xolito.getErrorCount();
+function updatePanel(): void {
+  if (!panel) return;
+  const mood    = xolito.getMood();
+  const phrase  = xolito.react('idle').text;
+  const sprite  = generateSpriteSVG(mood, 160);
+  const errors  = xolito.getErrorCount();
+  const counts  = diagWatcher.getCurrentCounts();
+  const mColor  = ({idle:'#4ec9b0',happy:'#4ec9b0',proud:'#4ec9b0',hyped:'#4ec9b0',mad:'#f44747',tired:'#f44747',worried:'#cca700',sassy:'#cca700',judging:'#cca700',sleepy:'#888'} as Record<XolitoMood,string>)[mood];
 
-  return `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body {
-      font-family: monospace;
-      background: #1e1e1e;
-      color: #d4d4d4;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem;
-    }
-    .pet { font-size: 4rem; margin: 1rem 0; animation: bounce 1s ease infinite; }
-    @keyframes bounce {
-      0%,100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
-    }
-    .name { font-size: 1.5rem; color: #4ec9b0; font-weight: bold; }
-    .mood { font-size: 0.9rem; color: #9cdcfe; margin: 0.5rem; }
-    .errors { font-size: 0.8rem; color: #f44747; margin-top: 1rem; }
-  </style>
-</head>
-<body>
+  panel.webview.html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',sans-serif;background:#1e1e1e;color:#d4d4d4;display:flex;flex-direction:column;align-items:center;padding:2rem 1rem;min-height:100vh}
+  .name{font-size:1.4rem;color:#4ec9b0;font-weight:700;margin-bottom:.5rem}
+  .sprite{margin:1rem 0;animation:float 3s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .badge{font-size:.8rem;padding:3px 12px;border-radius:99px;background:${mColor}22;color:${mColor};border:1px solid ${mColor}55;margin-bottom:1rem;font-family:monospace}
+  .phrase{font-size:.95rem;color:#9cdcfe;text-align:center;max-width:260px;line-height:1.5;font-style:italic;margin-bottom:1.5rem}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:260px;margin-bottom:1.5rem}
+  .stat{background:#2d2d2d;border-radius:8px;padding:10px;text-align:center}
+  .sv{font-size:1.5rem;font-weight:700} .sl{font-size:.7rem;color:#888;margin-top:2px}
+  .footer{font-size:.72rem;color:#555;text-align:center;margin-top:auto;padding-top:1rem}
+</style></head><body>
   <div class="name">🦎 Xolito</div>
-  <div class="pet">${icon}</div>
-  <div class="mood">Mood: ${mood}</div>
-  ${errorCount > 0 ? `<div class="errors">Errores seguidos: ${errorCount} 😬</div>` : ''}
-  <p style="color:#6a9955;font-size:0.8rem;margin-top:2rem;text-align:center">
-    "Aquí estoy, cuidándote... y juzgándote con cariño."
-  </p>
-</body>
-</html>`;
+  <div class="sprite">${sprite}</div>
+  <div class="badge">${mood}</div>
+  <div class="phrase">"${phrase}"</div>
+  <div class="stats">
+    <div class="stat"><div class="sv" style="color:#f44747">${counts.errors}</div><div class="sl">errores</div></div>
+    <div class="stat"><div class="sv" style="color:#cca700">${counts.warnings}</div><div class="sl">warnings</div></div>
+    <div class="stat"><div class="sv" style="color:#4ec9b0">${errors}</div><div class="sl">racha errores</div></div>
+    <div class="stat"><div class="sv" style="color:${mColor}">${mood}</div><div class="sl">mood</div></div>
+  </div>
+  <div class="footer">"Aquí estoy, cuidándote...<br>y juzgándote con cariño."</div>
+</body></html>`;
 }
 
 export function deactivate(): void {
+  diagWatcher?.stop();
   if (idleTimer) clearTimeout(idleTimer);
+  panel?.dispose();
 }

@@ -83,7 +83,7 @@ export const SPRITES: Record<XolitoMood, string[]> = {
   ],
 
   judging: [
-    "  ~(-_-)~  ",
+    "  ~(¬_¬)~  ",
     "  /|   |\\  ",
     "   | . |   ",
     "  /|   |\\  ",
@@ -94,8 +94,9 @@ export const SPRITES: Record<XolitoMood, string[]> = {
 /** Renderiza el sprite con una burbuja de diálogo encima */
 export function renderWithBubble(mood: XolitoMood, message: string): string {
   const sprite = SPRITES[mood];
+  const safeMessage = message.trim() || '...';
   const maxW = 38;
-  const words = message.split(' ');
+  const words = safeMessage.split(' ');
   const lines: string[] = [];
   let current = '';
 
