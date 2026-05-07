@@ -2,7 +2,7 @@
   "name": "xolito-vscode",
   "displayName": "Xolito 🦎",
   "description": "Tu ajolote regañón para VS Code. Con cariño y sarcasmo.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "xolito",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Other"],
@@ -17,8 +17,8 @@
     ]
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "dev":   "tsc -p tsconfig.json --watch",
+    "build":   "tsc -p tsconfig.json",
+    "dev":     "tsc -p tsconfig.json --watch",
     "package": "vsce package"
   },
   "dependencies": {
@@ -26,7 +26,8 @@
   },
   "devDependencies": {
     "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
     "typescript": "^5.4.0"
   },
-  "files": ["dist"]
+  "files": ["dist", "assets"]
 }
