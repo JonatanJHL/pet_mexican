@@ -11,19 +11,14 @@
   "main": "dist/extension.js",
   "contributes": {
     "commands": [
-      {
-        "command": "xolito.show",
-        "title": "🦎 Mostrar Xolito"
-      },
-      {
-        "command": "xolito.greet",
-        "title": "🦎 Xolito: ¡Hola!"
-      }
+      { "command": "xolito.show",   "title": "🦎 Mostrar Xolito" },
+      { "command": "xolito.greet",  "title": "🦎 Xolito: ¡Hola!" },
+      { "command": "xolito.toggle", "title": "🦎 Xolito: Toggle comentarios inline" }
     ]
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "tsc -p tsconfig.json",
+    "dev":   "tsc -p tsconfig.json --watch",
     "package": "vsce package"
   },
   "dependencies": {

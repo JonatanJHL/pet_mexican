@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "compilar-vscode",
+      "type": "shell",
+      "command": "cd packages/core && pnpm exec tsc && cd ../vscode && pnpm exec tsc -p tsconfig.json",
+      "group": "build",
+      "presentation": {
+        "reveal": "silent"
+      }
+    }
+  ]
+}
