@@ -1,33 +1,72 @@
 {
   "name": "xolito-vscode",
   "displayName": "Xolito 🦎",
-  "description": "Tu ajolote regañón para VS Code. Con cariño y sarcasmo.",
+  "description": "Tu ajolote regañón para VS Code. Detecta errores, te regaña con cariño y habla español mexicano.",
   "version": "0.2.0",
   "publisher": "xolito",
-  "engines": { "vscode": "^1.85.0" },
-  "categories": ["Other"],
-  "keywords": ["pet", "mascota", "ajolote", "mexicano", "fun"],
-  "activationEvents": ["onStartupFinished"],
+  "icon": "assets/xolito_idle.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JonatanJHL/pet_mexican"
+  },
+  "homepage": "https://github.com/JonatanJHL/pet_mexican#readme",
+  "bugs": {
+    "url": "https://github.com/JonatanJHL/pet_mexican/issues"
+  },
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "pet",
+    "mascota",
+    "ajolote",
+    "mexicano",
+    "fun",
+    "companion",
+    "xolito"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "dist/extension.js",
   "contributes": {
     "commands": [
-      { "command": "xolito.show",   "title": "🦎 Mostrar Xolito" },
-      { "command": "xolito.greet",  "title": "🦎 Xolito: ¡Hola!" },
-      { "command": "xolito.toggle", "title": "🦎 Xolito: Toggle comentarios inline" }
+      {
+        "command": "xolito.show",
+        "title": "🦎 Mostrar Xolito"
+      },
+      {
+        "command": "xolito.greet",
+        "title": "🦎 Xolito: ¡Hola!"
+      },
+      {
+        "command": "xolito.toggle",
+        "title": "🦎 Xolito: Toggle comentarios inline"
+      }
     ]
   },
   "scripts": {
-    "build":   "tsc -p tsconfig.json",
-    "dev":     "tsc -p tsconfig.json --watch",
-    "package": "vsce package"
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "dependencies": {
     "@xolito/core": "workspace:*"
   },
   "devDependencies": {
-    "@types/vscode": "^1.85.0",
     "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.28.0",
     "typescript": "^5.4.0"
   },
-  "files": ["dist", "assets"]
+  "files": [
+    "dist",
+    "assets"
+  ]
 }
