@@ -18,6 +18,8 @@ let panel:       vscode.WebviewPanel | undefined;
 let extContext:  vscode.ExtensionContext;
 
 const NOTIF_COOLDOWN = 8000;
+let   lastPhrase     = "¡Órale! Xolito en línea. 🦎";
+const messageHistory: { text: string; mood: string; time: string }[] = [];
 let   lastNotifTime  = 0;
 
 const MOOD_ICONS: Record<XolitoMood, string> = {
@@ -102,8 +104,16 @@ function resetIdleTimer(): void {
 function fireEvent(event: XolitoEvent, _detail?: string): void {
   const { text } = xolito.react(event);
   updateStatusBar(text);
+
+  // Guardar en historial y como última frase
+  lastPhrase = text;
+  const now2 = new Date();
+  const timeStr = now2.getHours().toString().padStart(2,'0') + ':' + now2.getMinutes().toString().padStart(2,'0');
+  messageHistory.unshift({ text, mood: xolito.getMood(), time: timeStr });
+  if (messageHistory.length > 5) messageHistory.pop();
+
   const now = Date.now();
-  if (now - lastNotifTime < NOTIF_COOLDOWN) return;
+  if (now - lastNotifTime < NOTIF_COOLDOWN) { if (panel) updatePanel(); return; }
   lastNotifTime = now;
   const sev = getMoodSeverity(xolito.getMood());
   const msg = `🦎 Xolito: ${text}`;
@@ -167,7 +177,7 @@ function updatePanel(): void {
   const mood    = xolito.getMood();
   const errors  = xolito.getErrorCount();
   const counts  = diagWatcher.getCurrentCounts();
-  const phrase  = xolito.react('greeted').text;
+  const phrase  = lastPhrase;
   const spriteUrl = getSpriteUri(mood);
   const mc = MOOD_COLORS[mood];
 
