@@ -1,163 +1,187 @@
+<div align="center">
+
 # 🦎 Xolito
+
+<img src="packages/vscode/assets/xolito_idle.png" width="120" alt="Xolito idle"/>
 
 > *"Aquí estoy, cuidándote... y juzgándote con cariño."*
 
-**Xolito** es tu ajolote de compañía para la terminal y VS Code.  
+**Tu ajolote regañón para VS Code y la terminal.**  
 Regañón. Tierno. Sarcástico. 100% mexicano. 0% filtro.
 
-```
-╭──────────────────────────────────────╮
-│ ¿Otra vez push a main? Ay, cabrón... │
-╰──────────────────────────────────────╯
-  ╲
-  ~(>_<)~
-  /|   |\
-   | ! |
-  /|   |\
- ~enojado~
-```
+![CI](https://github.com/JonatanJHL/pet_mexican/actions/workflows/ci.yml/badge.svg)
+![License](https://img.shields.io/badge/license-MIT-pink)
+![Made in Mexico](https://img.shields.io/badge/Hecho%20en-México%20🇲🇽-green)
+![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
+
+</div>
 
 ---
 
 ## ¿Qué es Xolito?
 
-Inspirado en el [Claude Code Buddy](https://anthropic.com) y los [Codex Pets](https://openai.com),  
-pero con sabor bien mexicano. El ajolote (*Ambystoma mexicanum*) es una especie endémica  
-de México que nunca termina de madurar — igual que nuestro código.
+Xolito es una mascota virtual inspirada en el **ajolote mexicano** (*Ambystoma mexicanum*) — la especie endémica de México que nunca termina de madurar. Igual que nuestro código.
+
+Vive en tu VS Code, detecta errores en tiempo real via LSP, y te regaña con cariño en español mexicano.
 
 ---
 
-## Instalación
+## 🎭 Moods
 
-### Claude Code (terminal)
+<div align="center">
+
+| | | | | |
+|:---:|:---:|:---:|:---:|:---:|
+| <img src="packages/vscode/assets/xolito_idle.png" width="80"/><br>**idle** | <img src="packages/vscode/assets/xolito_happy.png" width="80"/><br>**happy** | <img src="packages/vscode/assets/xolito_mad.png" width="80"/><br>**mad** | <img src="packages/vscode/assets/xolito_sassy.png" width="80"/><br>**sassy** | <img src="packages/vscode/assets/xolito_worried.png" width="80"/><br>**worried** |
+| <img src="packages/vscode/assets/xolito_proud.png" width="80"/><br>**proud** | <img src="packages/vscode/assets/xolito_hyped.png" width="80"/><br>**hyped** | <img src="packages/vscode/assets/xolito_tired.png" width="80"/><br>**tired** | <img src="packages/vscode/assets/xolito_judging.png" width="80"/><br>**judging** | <img src="packages/vscode/assets/xolito_idle.png" width="80"/><br>**sleepy** |
+
+</div>
+
+---
+
+## ✨ Features
+
+- 🔴 **Detecta errores LSP en tiempo real** — TypeScript, PHP, Python, Go, Rust, C#, Java
+- 💬 **Comentarios inline** — aparece junto a errores, warnings, `console.log` y TODOs
+- 🎨 **Sprites por mood** — cambia de cara según lo que detecta en tu código
+- 📊 **Panel con stats** — errores, warnings, racha y mood en tiempo real
+- 🌙 **Eventos especiales** — detecta coding nocturno, fin de semana, push a main
+- 🔇 **Toggle** — siléncialo cuando necesites concentrarte
+- 🇲🇽 **100% mexicano** — frases en español con spanglish natural
+
+---
+
+## 📦 Instalación
+
+### VS Code
+
+1. Clona el repo y compila:
+
 ```bash
-npx @xolito/claude-code
+git clone https://github.com/JonatanJHL/pet_mexican.git xolito
+cd xolito
+pnpm install
+cd packages/core && pnpm exec tsc
+cd ../vscode && pnpm exec tsc -p tsconfig.json
 ```
 
-O instalar global:
+2. Abre en VS Code y presiona **F5**:
+
 ```bash
+cd ../..
+code .
+# Presiona F5 → abre segunda ventana con Xolito instalado
+```
+
+3. Abre el panel: `Cmd+Shift+P` → **Mostrar Xolito**
+
+### Terminal (Claude Code)
+
+```bash
+npx @xolito/claude-code
+
+# O instalar global
 npm install -g @xolito/claude-code
 xolito
 ```
 
-### VS Code
-Busca `Xolito` en el Marketplace de VS Code, o:
-```bash
-code --install-extension xolito.xolito-vscode
-```
-
 ---
 
-## Uso en terminal
-
-```bash
-# Modo interactivo
-xolito
-
-# Reaccionar a un evento directo
-xolito build_fail
-xolito build_success
-xolito push_to_main
-
-# Ver ayuda
-xolito help
-```
-
-### Eventos disponibles
-
-| Evento | Qué lo dispara |
-|---|---|
-| `build_success` | Build exitoso 🎉 |
-| `build_fail` | Build roto 💀 |
-| `test_pass` | Tests verdes ✅ |
-| `test_fail` | Tests rojos 🔴 |
-| `push_to_main` | Push directo a main 😱 |
-| `git_force_push` | git push --force 💀💀 |
-| `console_log_left` | console.log en código |
-| `todo_comment` | TODO abandonado |
-| `merge_conflict` | Conflicto de merge |
-| `no_commits_1h` | Sin commits 1 hora |
-| `no_commits_3h` | Sin commits 3 horas |
-| `late_night_coding` | Codéando > 11pm |
-| `weekend_coding` | Codéando en fin de semana |
-| `heavy_node_modules` | node_modules > 500MB |
-| `deleted_tests` | Borraste tests |
-| `idle_10min` | Sin actividad 10 min |
-| `idle_30min` | Sin actividad 30 min |
-
----
-
-## Ejemplos de frases
+## 💬 Frases de ejemplo
 
 ```
-🔴 Build fallido:
+🔴 Error detectado:
   "Ay, mijo... otra vez. ¿No que muy bueno?"
-  "Tranquilo, le pasa hasta al mejor... aunque tú ya vas 4."
   "Failed. Así como tu dieta de enero, pero en código."
+  "¿Leíste el error o nomás lo cerraste?"
 
 ✅ Build exitoso:
   "Órale, compiló. No siempre la riegas, manito. 💚"
-  "¡Funcionó! Anótalo, porque no pasa seguido."
+  "Compiló limpio. Tu mamá estaría orgullosa."
 
 😴 Sin commits en 3 horas:
   "Tres horas, compa. TU MAMÁ trabaja más rápido. Con todo respeto."
-  "¿Sabías que tu mamá commitea más seguido? No, mentira, pero ya."
+  "Bro, git commit existe. Te lo juro. Lo acabo de checar."
 
 💀 Push a main:
   "¡Ay, cabrón! ¿Y el PR? ¿Lo dejaste en el carro?"
-  "Mínimo reza antes de hacer eso, ¿no?"
+  "Directo a main. Ora sí Dios nos agarre confesados."
 
-🌙 Noche de código:
+🌙 Coding nocturno:
   "Son las 11pm y sigues aquí. Tu cama también te quiere, ¿eh?"
-  "Las 12am y tú aquí. Tu mamá estaría muy orgullosa... y preocupada."
+  "Oye, ya duerme. Mañana lo ves y dices '¿quién hizo esto?'"
+
+🔍 console.log detectado:
+  "console.log('aquí llegué'). Clásico. Nunca cambia."
+  "Mijo, hay debuggers para eso. Los inventaron y todo."
 ```
 
 ---
 
-## Estructura del proyecto
+## 🗂 Estructura
 
 ```
 xolito/
 ├── packages/
-│   ├── core/          ← lógica, frases, sprites ASCII
-│   ├── claude-code/   ← plugin de terminal
-│   └── vscode/        ← extensión de VS Code
+│   ├── core/              ← lógica central, frases, sprites SVG
+│   │   └── src/
+│   │       ├── phrases.ts     ← banco de frases (anti-repetición)
+│   │       ├── xolito.ts      ← clase principal
+│   │       └── __tests__/     ← 52 tests con Vitest
+│   ├── vscode/            ← extensión VS Code
+│   │   ├── src/
+│   │   │   ├── extension.ts         ← entry point
+│   │   │   ├── decorations.ts       ← inline comments
+│   │   │   └── diagnostics-watcher.ts ← LSP watcher
+│   │   └── assets/        ← sprites PNG por mood
+│   └── claude-code/       ← plugin de terminal
 ├── pnpm-workspace.yaml
 └── README.md
 ```
 
 ---
 
-## Contribuir
+## 🤝 Contribuir
 
-¿Tienes una frase más chida? ¿Un sprite más bonito? ¿Una broma de mamá más ingeniosa?  
-**Abre un PR.** Las contribuciones de frases son especialmente bienvenidas.
+¿Tienes una frase más chida? ¿Un sprite más bonito? ¡Abre un PR!
 
 ### Agregar frases
 
-Edita `packages/core/src/phrases.ts` y agrega tu frase al arreglo correspondiente:
+Edita `packages/core/src/phrases.ts`:
 
 ```typescript
 build_fail: [
-  // ... frases existentes ...
-  { text: "Tu nueva frase bien picosa aquí.", mood: 'mad' },
+  { text: "Tu nueva frase aquí.", mood: 'mad' },
 ],
 ```
 
-**Reglas para frases:**
-- Deben ser chistosas pero sin insultos reales
-- Las "mamadas" son de carnal, no de enemigo
-- El sarcasmo va acompañado de cariño
-- Mezcla español con inglés si se siente natural
-- Máximo 60 caracteres para que quepa en el status bar
+**Reglas:**
+- Chistosas pero sin insultos reales — las mamadas son de carnal, no de enemigo
+- Sarcasmo con cariño
+- Mezcla español/inglés si se siente natural
+- Máximo 100 caracteres
+
+### Correr tests
+
+```bash
+pnpm test           # 52 tests
+pnpm test:watch     # modo watch
+pnpm test:coverage  # con cobertura
+```
 
 ---
 
-## Licencia
+## 📄 Licencia
 
 MIT — Úsalo, modifícalo, ponle más frases.  
-Xolito es de todos. Como el aguacate.
+Xolito es de todos. Como el aguacate. 🥑
 
 ---
 
+<div align="center">
+
 *Hecho con 🦎 y mucho café en México*
+
+<img src="packages/vscode/assets/xolito_sheet.png" width="300" alt="Xolito character sheet"/>
+
+</div>
