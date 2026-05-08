@@ -1,11 +1,11 @@
 // ============================================================
 //  xolito/packages/vscode/src/decorations.ts
 //  Xolito inline — funciona con CUALQUIER lenguaje
+//  v2: un solo comentario por línea (sin duplicados)
 // ============================================================
 
 import * as vscode from 'vscode';
 
-// Patrones de "malas prácticas" por lenguaje
 const CONSOLE_PATTERNS: Record<string, RegExp> = {
   javascript:      /console\.log\s*\(/g,
   typescript:      /console\.log\s*\(/g,
@@ -17,6 +17,7 @@ const CONSOLE_PATTERNS: Record<string, RegExp> = {
   go:              /fmt\.Println\s*\(/g,
   rust:            /println!\s*\(/g,
   java:            /System\.out\.print/g,
+  csharp:          /Console\.WriteLine\s*\(|Console\.Write\s*\(/g,
 };
 
 const TODO_PATTERN = /\/\/\s*TODO|\/\/\s*FIXME|#\s*TODO|#\s*FIXME/gi;
@@ -45,26 +46,20 @@ export class XolitoDecorations {
 
   start(): void {
     this.enabled = true;
-    // Actualizar el editor activo inmediatamente
     if (vscode.window.activeTextEditor) {
       this.updateDecorations(vscode.window.activeTextEditor);
     }
-
     this.disposables.push(
-      // Cuando cambias de archivo
       vscode.window.onDidChangeActiveTextEditor(editor => {
         if (editor && this.enabled) this.updateDecorations(editor);
       }),
-      // Cuando el LSP actualiza errores (cualquier lenguaje)
       vscode.languages.onDidChangeDiagnostics(e => {
         const editor = vscode.window.activeTextEditor;
         if (!editor || !this.enabled) return;
-        // Solo si el archivo activo fue afectado
         if (e.uris.some(u => u.toString() === editor.document.uri.toString())) {
           this.updateDecorations(editor);
         }
       }),
-      // Cuando editas el archivo
       vscode.workspace.onDidChangeTextDocument(e => {
         const editor = vscode.window.activeTextEditor;
         if (editor && this.enabled && e.document === editor.document) {
@@ -78,7 +73,6 @@ export class XolitoDecorations {
     this.enabled = false;
     this.disposables.forEach(d => d.dispose());
     this.disposables = [];
-    // Limpiar decoraciones de todos los editores abiertos
     vscode.window.visibleTextEditors.forEach(editor => {
       editor.setDecorations(this.errorDecoration,   []);
       editor.setDecorations(this.warningDecoration, []);
@@ -94,18 +88,27 @@ export class XolitoDecorations {
   }
 
   private updateDecorations(editor: vscode.TextEditor): void {
-    const doc    = editor.document;
-    const text   = doc.getText();
-    const lang   = doc.languageId;
-    const diags  = vscode.languages.getDiagnostics(doc.uri);
+    const doc   = editor.document;
+    const text  = doc.getText();
+    const lang  = doc.languageId;
+    const diags = vscode.languages.getDiagnostics(doc.uri);
 
     const errorRanges:   vscode.DecorationOptions[] = [];
     const warningRanges: vscode.DecorationOptions[] = [];
     const infoRanges:    vscode.DecorationOptions[] = [];
 
-    // ── Errores y warnings del LSP (cualquier lenguaje) ─────
+    // ── Un solo comentario por línea (sin duplicados) ────────
+    const errorLines   = new Set<number>();
+    const warningLines = new Set<number>();
+    const infoLines    = new Set<number>();
+
+    // ── Errores y warnings del LSP ────────────────────────────
     for (const diag of diags) {
+      const lineNum = diag.range.start.line;
+
       if (diag.severity === vscode.DiagnosticSeverity.Error) {
+        if (errorLines.has(lineNum)) continue;
+        errorLines.add(lineNum);
         errorRanges.push({
           range: new vscode.Range(diag.range.start, diag.range.end),
           renderOptions: {
@@ -113,6 +116,8 @@ export class XolitoDecorations {
           },
         });
       } else if (diag.severity === vscode.DiagnosticSeverity.Warning) {
+        if (warningLines.has(lineNum)) continue;
+        warningLines.add(lineNum);
         warningRanges.push({
           range: new vscode.Range(diag.range.start, diag.range.end),
           renderOptions: {
@@ -122,14 +127,17 @@ export class XolitoDecorations {
       }
     }
 
-    // ── Debug prints por lenguaje ────────────────────────────
+    // ── Debug prints por lenguaje ─────────────────────────────
     const consolePattern = CONSOLE_PATTERNS[lang];
     if (consolePattern) {
-      consolePattern.lastIndex = 0; // reset regex
+      consolePattern.lastIndex = 0;
       let match;
       while ((match = consolePattern.exec(text)) !== null) {
-        const pos   = doc.positionAt(match.index);
-        const end   = doc.positionAt(match.index + match[0].length);
+        const pos     = doc.positionAt(match.index);
+        const lineNum = pos.line;
+        if (infoLines.has(lineNum)) continue;
+        infoLines.add(lineNum);
+        const end = doc.positionAt(match.index + match[0].length);
         infoRanges.push({
           range: new vscode.Range(pos, end),
           renderOptions: {
@@ -139,11 +147,14 @@ export class XolitoDecorations {
       }
     }
 
-    // ── TODO / FIXME (todos los lenguajes) ──────────────────
+    // ── TODO / FIXME ──────────────────────────────────────────
     TODO_PATTERN.lastIndex = 0;
     let match;
     while ((match = TODO_PATTERN.exec(text)) !== null) {
-      const pos = doc.positionAt(match.index);
+      const pos     = doc.positionAt(match.index);
+      const lineNum = pos.line;
+      if (infoLines.has(lineNum)) continue;
+      infoLines.add(lineNum);
       const end = doc.positionAt(match.index + match[0].length);
       infoRanges.push({
         range: new vscode.Range(pos, end),
@@ -158,33 +169,28 @@ export class XolitoDecorations {
     editor.setDecorations(this.infoDecoration,    infoRanges);
   }
 
-  // ── Frases por lenguaje ──────────────────────────────────
-
   private errorPhrase(msg: string, lang: string): string {
     const m = msg.toLowerCase();
-
-    // PHP
     if (lang === 'php') {
-      if (m.includes('undefined'))    return 'variable fantasma, mijo';
-      if (m.includes('syntax'))       return '¿leíste el error o nomás lo cerraste?';
-      if (m.includes('call to'))      return 'esa función no existe, la inventaste';
+      if (m.includes('undefined'))  return 'variable fantasma, mijo';
+      if (m.includes('syntax'))     return '¿leíste el error o nomás lo cerraste?';
+      if (m.includes('call to'))    return 'esa función no existe, la inventaste';
       return 'el parser no te entiende. yo tampoco.';
     }
-    // Python
     if (lang === 'python') {
-      if (m.includes('indentation'))  return 'los espacios importan, cuate';
-      if (m.includes('name'))         return '¿y esa variable de dónde salió?';
+      if (m.includes('indentation')) return 'los espacios importan, cuate';
+      if (m.includes('name'))        return '¿y esa variable de dónde salió?';
       return 'Python dice que no, mijo';
     }
-    // TypeScript / JavaScript
-    if (m.includes('cannot find') || m.includes('does not exist'))
-      return '¿lo inventaste o existe?';
-    if (m.includes('not assignable') || m.includes('type'))
-      return 'los tipos no mienten, mijo';
-    if (m.includes('syntax'))
-      return '¿lo escribiste con los ojos cerrados?';
-    if (m.includes('missing'))
-      return 'le falta algo, revisa';
+    if (lang === 'csharp') {
+      if (m.includes('does not exist') || m.includes('not found')) return '¿lo inventaste o existe?';
+      if (m.includes('cannot convert')) return 'los tipos no mienten, mijo';
+      return 'C# no te entiende. yo tampoco.';
+    }
+    if (m.includes('cannot find') || m.includes('does not exist')) return '¿lo inventaste o existe?';
+    if (m.includes('not assignable') || m.includes('type'))        return 'los tipos no mienten, mijo';
+    if (m.includes('syntax'))   return '¿lo escribiste con los ojos cerrados?';
+    if (m.includes('missing'))  return 'le falta algo, revisa';
     return 'ay, mijo... otro error';
   }
 
@@ -202,6 +208,7 @@ export class XolitoDecorations {
       php:    ['var_dump detectado. clásico.', '¿ibas a subir esto a prod?'],
       python: ['print de debug... ¿lo ibas a quitar?', 'muy artesanal tu debug'],
       go:     ['Println de debug, ¿lo borramos?'],
+      csharp: ['Console.WriteLine en prod. clásico.', 'muy artesanal tu debug, cuate'],
       default:['muy artesanal tu debug', '¿ibas a subir esto a prod, verdad?'],
     };
     const options = phrases[lang] ?? phrases['default'];
