@@ -1,15 +1,13 @@
 // ============================================================
-//  xolito/packages/vscode/src/extension.ts  (v5 — spritesheet PNG)
+//  xolito/packages/vscode/src/extension.ts  (v6 — sprites por mood)
 // ============================================================
 
 import * as vscode from 'vscode';
-import * as path from 'path';
 import * as fs from 'fs';
 import { Xolito } from '@xolito/core';
 import type { XolitoEvent, XolitoMood } from '@xolito/core';
 import { DiagnosticsWatcher } from './diagnostics-watcher.js';
 import { XolitoDecorations } from './decorations.js';
-import { MOOD_OVERLAYS, SPRITE_CSS, SPRITE_JS } from './xolitoSprites.js';
 
 let xolito:      Xolito;
 let statusBar:   vscode.StatusBarItem;
@@ -27,7 +25,11 @@ const MOOD_ICONS: Record<XolitoMood, string> = {
   proud:'🦎⭐', worried:'🦎😬', hyped:'🦎🔥', tired:'🦎😮', judging:'🦎🧐',
 };
 
-// ── Activate ──────────────────────────────────────────────────
+const MOOD_COLORS: Record<XolitoMood, string> = {
+  idle:'#4ec9b0', happy:'#4ec9b0', proud:'#4ec9b0', hyped:'#4ec9b0',
+  mad:'#f44747',  tired:'#f44747',
+  worried:'#cca700', sassy:'#cca700', judging:'#cca700', sleepy:'#888888',
+};
 
 export function activate(context: vscode.ExtensionContext): void {
   extContext = context;
@@ -66,26 +68,20 @@ export function activate(context: vscode.ExtensionContext): void {
   resetIdleTimer();
 }
 
-// ── Handlers ─────────────────────────────────────────────────
-
 function onSave(doc: vscode.TextDocument): void {
   const text = doc.getText();
   if (/console\.log/.test(text))      { fireEvent('console_log_left'); return; }
   if (/\/\/\s*TODO/i.test(text))      { fireEvent('todo_comment');     return; }
   if (/\{[^{}]{3000,}\}/s.test(text)) { fireEvent('long_function');    return; }
-  const isCode = ['typescript','javascript','typescriptreact','javascriptreact']
-    .includes(doc.languageId);
-  if (isCode && !/\/\/|\/\*/.test(text) && text.length > 400)
-    fireEvent('save_no_comments');
+  const isCode = ['typescript','javascript','typescriptreact','javascriptreact'].includes(doc.languageId);
+  if (isCode && !/\/\/|\/\*/.test(text) && text.length > 400) fireEvent('save_no_comments');
 }
 
 function onTaskEnd(e: vscode.TaskProcessEndEvent): void {
   const name = e.execution.task.name.toLowerCase();
   const ok   = e.exitCode === 0;
-  if (name.includes('build') || name.includes('tsc'))
-    fireEvent(ok ? 'build_success' : 'build_fail');
-  else if (name.includes('test') || name.includes('vitest'))
-    fireEvent(ok ? 'test_pass' : 'test_fail');
+  if (name.includes('build') || name.includes('tsc'))        fireEvent(ok ? 'build_success' : 'build_fail');
+  else if (name.includes('test') || name.includes('vitest')) fireEvent(ok ? 'test_pass' : 'test_fail');
 }
 
 function onTerminalData(data: string): void {
@@ -100,13 +96,8 @@ function onTerminalData(data: string): void {
 
 function resetIdleTimer(): void {
   if (idleTimer) clearTimeout(idleTimer);
-  idleTimer = setTimeout(() => {
-    const ev = xolito.checkIdle();
-    if (ev) fireEvent(ev);
-  }, 600000);
+  idleTimer = setTimeout(() => { const ev = xolito.checkIdle(); if (ev) fireEvent(ev); }, 600000);
 }
-
-// ── Core ──────────────────────────────────────────────────────
 
 function fireEvent(event: XolitoEvent, _detail?: string): void {
   const { text } = xolito.react(event);
@@ -146,142 +137,88 @@ function toggleDecorations(): void {
   }
 }
 
-// ── Panel webview con spritesheet PNG ─────────────────────────
-
 function showPanel(): void {
   if (panel) { panel.reveal(vscode.ViewColumn.Beside); updatePanel(); return; }
   panel = vscode.window.createWebviewPanel(
     'xolito', '🦎 Xolito', vscode.ViewColumn.Beside,
-    {
-      enableScripts: true,
-      localResourceRoots: [
-        vscode.Uri.joinPath(extContext.extensionUri, 'assets'),
-      ],
-    }
+    { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(extContext.extensionUri, 'assets')] }
   );
   panel.onDidDispose(() => { panel = undefined; });
   updatePanel();
 }
 
-function getSpriteUri(): string {
+// Obtiene URI del sprite PNG para el mood actual
+function getSpriteUri(mood: XolitoMood): string {
   if (!panel || !extContext) return '';
-
-  // Intentar sprite_xolito.png primero (el spritesheet animado)
-  const candidates = ['assets/sprite_xolito.png', 'assets/xolito_sheet.png'];
-  for (const candidate of candidates) {
-    const uri = vscode.Uri.joinPath(extContext.extensionUri, candidate);
-    if (fs.existsSync(uri.fsPath)) {
-      return panel.webview.asWebviewUri(uri).toString();
-    }
+  const candidates = [
+    `assets/xolito_${mood}.png`,   // sprite específico del mood
+    'assets/xolito_idle.png',      // idle fallback
+    'assets/sprite_xolito.png',    // spritesheet fallback
+  ];
+  for (const c of candidates) {
+    const uri = vscode.Uri.joinPath(extContext.extensionUri, c);
+    if (fs.existsSync(uri.fsPath)) return panel.webview.asWebviewUri(uri).toString();
   }
-  return ''; // fallback sin sprite
+  return '';
 }
 
 function updatePanel(): void {
   if (!panel) return;
-
   const mood    = xolito.getMood();
   const errors  = xolito.getErrorCount();
   const counts  = diagWatcher.getCurrentCounts();
   const phrase  = xolito.react('greeted').text;
-  const spriteUrl = getSpriteUri();
-  const overlay = MOOD_OVERLAYS[mood] ?? '';
+  const spriteUrl = getSpriteUri(mood);
+  const mc = MOOD_COLORS[mood];
 
-  const mColor: Record<XolitoMood, string> = {
-    idle:'#4ec9b0', happy:'#4ec9b0', proud:'#4ec9b0', hyped:'#4ec9b0',
-    mad:'#f44747',  tired:'#f44747',
-    worried:'#cca700', sassy:'#cca700', judging:'#cca700', sleepy:'#888888',
-  };
-  const mc = mColor[mood];
+  // Animación CSS según mood
+  const spriteAnim = mood === 'mad'
+    ? 'animation: shake 0.4s ease-in-out 2, float 3s ease-in-out 0.8s infinite'
+    : mood === 'sleepy' || mood === 'tired'
+    ? 'animation: float 5s ease-in-out infinite; opacity:0.85'
+    : mood === 'hyped'
+    ? 'animation: float 1s ease-in-out infinite'
+    : 'animation: float 3s ease-in-out infinite';
 
   panel.webview.html = `<!DOCTYPE html>
-<html lang="es"><head>
-<meta charset="UTF-8">
+<html lang="es"><head><meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy"
-  content="default-src 'none';
-           img-src ${panel.webview.cspSource} data:;
-           style-src 'unsafe-inline';
-           script-src 'unsafe-inline';">
+  content="default-src 'none'; img-src ${panel.webview.cspSource} data:; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-  font-family:'Segoe UI',sans-serif;
-  background:#1e1e1e;color:#d4d4d4;
-  display:flex;flex-direction:column;align-items:center;
-  padding:1.5rem 1rem;min-height:100vh;
-}
-.name{font-size:1.3rem;color:#4ec9b0;font-weight:700;margin-bottom:.5rem}
-.sprite-area{margin:.5rem 0 .75rem;position:relative}
-${SPRITE_CSS}
-.badge{
-  font-size:.8rem;padding:3px 12px;border-radius:99px;
-  background:${mc}22;color:${mc};border:1px solid ${mc}55;
-  margin-bottom:.75rem;font-family:monospace;
-}
-.phrase{
-  font-size:.88rem;color:#9cdcfe;text-align:center;
-  max-width:220px;line-height:1.5;font-style:italic;margin-bottom:1.25rem;
-}
-.stats{
-  display:grid;grid-template-columns:1fr 1fr;gap:8px;
-  width:100%;max-width:220px;margin-bottom:1rem;
-}
-.stat{background:#2d2d2d;border-radius:8px;padding:8px;text-align:center}
-.sv{font-size:1.3rem;font-weight:700}
-.sl{font-size:.65rem;color:#666;margin-top:2px}
-.hint{font-size:.68rem;color:#444;text-align:center;line-height:1.4;margin-top:.5rem}
-</style>
-</head>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',sans-serif;background:#1e1e1e;color:#d4d4d4;
+       display:flex;flex-direction:column;align-items:center;padding:1.5rem 1rem;min-height:100vh}
+  .name{font-size:1.3rem;color:#4ec9b0;font-weight:700;margin-bottom:.5rem}
+  .sprite-wrap{margin:.5rem 0 .75rem;filter:drop-shadow(0 4px 16px ${mc}44)}
+  .sprite{width:160px;height:160px;object-fit:contain;image-rendering:pixelated;${spriteAnim}}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+  .badge{font-size:.8rem;padding:3px 12px;border-radius:99px;
+         background:${mc}22;color:${mc};border:1px solid ${mc}55;margin-bottom:.75rem;font-family:monospace}
+  .phrase{font-size:.88rem;color:#9cdcfe;text-align:center;max-width:220px;line-height:1.5;font-style:italic;margin-bottom:1.25rem}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:220px;margin-bottom:1rem}
+  .stat{background:#2d2d2d;border-radius:8px;padding:8px;text-align:center}
+  .sv{font-size:1.3rem;font-weight:700} .sl{font-size:.65rem;color:#666;margin-top:2px}
+  .hint{font-size:.68rem;color:#444;text-align:center;line-height:1.4;margin-top:.5rem}
+  .footer{font-size:.65rem;color:#333;text-align:center;margin-top:1.5rem}
+</style></head>
 <body>
-<div class="name">🦎 Xolito</div>
-
-<div class="sprite-area">
+  <div class="name">🦎 Xolito</div>
   <div class="sprite-wrap">
     ${spriteUrl
-      ? `<div id="xolito-sprite" class="sprite" style="background-image:url('${spriteUrl}')"></div>`
-      : `<div style="font-size:80px;line-height:1;text-align:center">🦎</div>`
-    }
-    ${overlay}
+      ? `<img class="sprite" src="${spriteUrl}" alt="Xolito ${mood}"/>`
+      : `<div style="font-size:100px;line-height:1;text-align:center;${spriteAnim}">🦎</div>`}
   </div>
-</div>
-
-<div class="badge">${mood}</div>
-<div class="phrase">"${phrase}"</div>
-
-<div class="stats">
-  <div class="stat">
-    <div class="sv" style="color:#f44747">${counts.errors}</div>
-    <div class="sl">errores</div>
+  <div class="badge">${mood}</div>
+  <div class="phrase">"${phrase}"</div>
+  <div class="stats">
+    <div class="stat"><div class="sv" style="color:#f44747">${counts.errors}</div><div class="sl">errores</div></div>
+    <div class="stat"><div class="sv" style="color:#cca700">${counts.warnings}</div><div class="sl">warnings</div></div>
+    <div class="stat"><div class="sv" style="color:#4ec9b0">${errors}</div><div class="sl">racha</div></div>
+    <div class="stat"><div class="sv" style="color:${mc}">${mood}</div><div class="sl">mood</div></div>
   </div>
-  <div class="stat">
-    <div class="sv" style="color:#cca700">${counts.warnings}</div>
-    <div class="sl">warnings</div>
-  </div>
-  <div class="stat">
-    <div class="sv" style="color:#4ec9b0">${errors}</div>
-    <div class="sl">racha</div>
-  </div>
-  <div class="stat">
-    <div class="sv" style="color:${mc}">${mood}</div>
-    <div class="sl">mood</div>
-  </div>
-</div>
-
-<div class="hint">
-  Xolito aparece inline en tu código<br>
-  junto a errores, warnings y console.logs
-</div>
-
-<script>
-${spriteUrl ? SPRITE_JS : '// sin sprite, usando emoji fallback'}
-
-// Vibrar si está enojado
-${mood === 'mad' ? `
-  document.addEventListener('DOMContentLoaded', () => {
-    if (window.xolitoAnim) window.xolitoAnim.setMad();
-  });
-` : ''}
-</script>
+  <div class="hint">Xolito aparece inline en tu código<br>junto a errores, warnings y TODOs</div>
+  <div class="footer">"Aquí estoy, cuidándote...<br>y juzgándote con cariño."</div>
 </body></html>`;
 }
 
