@@ -1,0 +1,22 @@
+# Monorepo: paquetes hermanos que se cuelan via symlinks
+../core/**
+../claude-code/**
+../**
+
+# Dependencias (excepto el core compilado)
+node_modules/**
+!node_modules/@xolito/core/dist/**
+!node_modules/@xolito/core/package.json
+
+# Archivos de desarrollo
+src/**
+build.mjs
+tsconfig.json
+*.vsix
+
+# Mapas y tests
+**/*.map
+**/__tests__/**
+**/vitest*
+**/*.test.*
+**/*.spec.*

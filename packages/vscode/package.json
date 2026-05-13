@@ -2,7 +2,7 @@
   "name": "xolito-vscode",
   "displayName": "Xolito 🦎",
   "description": "Tu ajolote regañón para VS Code. Detecta errores, te regaña con cariño y habla español mexicano.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "xolito",
   "icon": "assets/xolito_idle.png",
   "repository": {
@@ -50,10 +50,10 @@
     ]
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "dev": "tsc -p tsconfig.json --watch",
-    "package": "vsce package",
-    "publish": "vsce publish"
+    "build": "node build.mjs",
+    "dev": "node build.mjs --watch",
+    "package": "node build.mjs && vsce package --no-dependencies",
+    "publish": "node build.mjs && vsce publish --no-dependencies"
   },
   "dependencies": {
     "@xolito/core": "workspace:*"
@@ -65,8 +65,5 @@
     "esbuild": "^0.28.0",
     "typescript": "^5.4.0"
   },
-  "files": [
-    "dist",
-    "assets"
-  ]
+  "readme": "MARKETPLACE.md"
 }
