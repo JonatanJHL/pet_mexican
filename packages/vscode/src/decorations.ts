@@ -1,7 +1,8 @@
 // ============================================================
 //  xolito/packages/vscode/src/decorations.ts
 //  Xolito inline — funciona con CUALQUIER lenguaje
-//  v2: un solo comentario por línea (sin duplicados)
+//  rotación de frases, memoria de archivo anterior,
+//      warnings expandidos, TODO rotado, onSave sin cambios
 // ============================================================
 
 import * as vscode from 'vscode';
@@ -29,6 +30,14 @@ export class XolitoDecorations {
   private disposables: vscode.Disposable[] = [];
   private enabled = true;
 
+  // ── Rotación de frases ────────────────────────────────────
+  private phraseCounters: Map<string, number> = new Map();
+
+  // ── Memoria entre archivos ────────────────────────────────
+  private prevFileUri    = '';
+  private prevFileErrors = 0;
+  private todoCounter    = 0;
+
   constructor() {
     this.errorDecoration = vscode.window.createTextEditorDecorationType({
       after: { margin: '0 0 0 2rem', color: new vscode.ThemeColor('errorForeground') },
@@ -47,11 +56,22 @@ export class XolitoDecorations {
   start(): void {
     this.enabled = true;
     if (vscode.window.activeTextEditor) {
+      this.prevFileUri = vscode.window.activeTextEditor.document.uri.toString();
       this.updateDecorations(vscode.window.activeTextEditor);
     }
     this.disposables.push(
       vscode.window.onDidChangeActiveTextEditor(editor => {
-        if (editor && this.enabled) this.updateDecorations(editor);
+        if (!editor || !this.enabled) return;
+        const currentUri = editor.document.uri.toString();
+
+        // ── Cambio de archivo: resetea contadores y guarda memoria ──
+        if (this.prevFileUri && this.prevFileUri !== currentUri) {
+          this.phraseCounters.clear();
+          this.todoCounter = 0;
+          // prevFileErrors ya fue actualizado en updateDecorations
+        }
+        this.prevFileUri = currentUri;
+        this.updateDecorations(editor);
       }),
       vscode.languages.onDidChangeDiagnostics(e => {
         const editor = vscode.window.activeTextEditor;
@@ -97,10 +117,17 @@ export class XolitoDecorations {
     const warningRanges: vscode.DecorationOptions[] = [];
     const infoRanges:    vscode.DecorationOptions[] = [];
 
-    // ── Un solo comentario por línea (sin duplicados) ────────
     const errorLines   = new Set<number>();
     const warningLines = new Set<number>();
     const infoLines    = new Set<number>();
+
+    // ── Cuenta errores actuales para memoria ─────────────────
+    const currentErrors = diags.filter(
+      d => d.severity === vscode.DiagnosticSeverity.Error
+    ).length;
+
+    // ── Frases contextuales al venir de otro archivo con errores ──
+    const cameFromBrokenFile = this.prevFileErrors > 0;
 
     // ── Errores y warnings del LSP ────────────────────────────
     for (const diag of diags) {
@@ -112,7 +139,9 @@ export class XolitoDecorations {
         errorRanges.push({
           range: new vscode.Range(diag.range.start, diag.range.end),
           renderOptions: {
-            after: { contentText: `  🦎💢 ${this.errorPhrase(diag.message, lang)}` },
+            after: {
+              contentText: `  🦎💢 ${this.errorPhrase(diag.message, lang, cameFromBrokenFile)}`,
+            },
           },
         });
       } else if (diag.severity === vscode.DiagnosticSeverity.Warning) {
@@ -159,7 +188,7 @@ export class XolitoDecorations {
       infoRanges.push({
         range: new vscode.Range(pos, end),
         renderOptions: {
-          after: { contentText: '  🦎🧐 ¿este TODO tiene telarañas?' },
+          after: { contentText: `  🦎🧐 ${this.todoPhrase()}` },
         },
       });
     }
@@ -167,49 +196,207 @@ export class XolitoDecorations {
     editor.setDecorations(this.errorDecoration,   errorRanges);
     editor.setDecorations(this.warningDecoration, warningRanges);
     editor.setDecorations(this.infoDecoration,    infoRanges);
+
+    // ── Actualiza memoria para el siguiente archivo ───────────
+    this.prevFileErrors = currentErrors;
   }
 
-  private errorPhrase(msg: string, lang: string): string {
+  // ── Rotación anti-repetición ──────────────────────────────
+  private rotate(key: string, phrases: string[]): string {
+    const i = (this.phraseCounters.get(key) ?? 0) % phrases.length;
+    this.phraseCounters.set(key, i + 1);
+    return phrases[i];
+  }
+
+  // ── Frases de error con memoria de archivo anterior ───────
+  private errorPhrase(msg: string, lang: string, cameFromBrokenFile: boolean): string {
     const m = msg.toLowerCase();
+
+    // Si viene de un archivo con errores, Xolito lo recuerda
+    if (cameFromBrokenFile) {
+      const crossFileJabs = [
+        '¿recuerdas que en el otro archivo también la regaste?',
+        'no hagas lo mismo que en el archivo anterior, mijo.',
+        'en la otra lo dejaste roto... aquí tampoco empieza bien.',
+        '¿vienes huyendo del otro archivo? aquí también hay errores.',
+        'no hagas lo mismo que con tu ex. en el código, me refiero.',
+        '¿llegaste a esconder los errores del otro? clásico.',
+      ];
+      // Solo usa frase de memoria cada 3 errores para no saturar
+      const counter = this.phraseCounters.get('cross_file') ?? 0;
+      this.phraseCounters.set('cross_file', counter + 1);
+      if (counter % 3 === 0) {
+        return crossFileJabs[Math.floor(Math.random() * crossFileJabs.length)];
+      }
+    }
+
     if (lang === 'php') {
-      if (m.includes('undefined'))  return 'variable fantasma, mijo';
-      if (m.includes('syntax'))     return '¿leíste el error o nomás lo cerraste?';
-      if (m.includes('call to'))    return 'esa función no existe, la inventaste';
-      return 'el parser no te entiende. yo tampoco.';
+      if (m.includes('undefined'))  return this.rotate('php_undef', [
+        'variable fantasma, mijo', '¿de dónde salió eso?',
+        'undefined... la inventaste', '¿existe esa variable o la soñaste?',
+      ]);
+      if (m.includes('syntax'))     return this.rotate('php_syntax', [
+        '¿leíste el error o nomás lo cerraste?', 'syntax error, clásico',
+        '¿lo escribiste con los ojos cerrados?', 'le falta algo ahí, revisa lento',
+      ]);
+      if (m.includes('call to'))    return this.rotate('php_call', [
+        'esa función no existe, la inventaste', '¿seguro que eso existe?',
+        'función desaparecida. ¿o nunca existió?',
+      ]);
+      return this.rotate('php_generic', [
+        'el parser no te entiende. yo tampoco.',
+        'ay, mijo... revisa eso', 'algo está mal. algo.',
+        'error. ¿leíste el mensaje?', 'tronó. ¿sorpresa?',
+      ]);
     }
+
     if (lang === 'python') {
-      if (m.includes('indentation')) return 'los espacios importan, cuate';
-      if (m.includes('name'))        return '¿y esa variable de dónde salió?';
-      return 'Python dice que no, mijo';
+      if (m.includes('indentation')) return this.rotate('py_indent', [
+        'los espacios importan, cuate', 'indentación rota. Python llora.',
+        '¿tabs o espacios? decide de una vez.',
+      ]);
+      if (m.includes('name'))        return this.rotate('py_name', [
+        '¿y esa variable de dónde salió?', 'NameError. la inventaste.',
+        'eso no existe, mijo',
+      ]);
+      return this.rotate('py_generic', [
+        'Python dice que no, mijo', 'ay, cuate... error',
+        'Python no está contento hoy', 'revisa eso lento',
+      ]);
     }
+
     if (lang === 'csharp') {
-      if (m.includes('does not exist') || m.includes('not found')) return '¿lo inventaste o existe?';
-      if (m.includes('cannot convert')) return 'los tipos no mienten, mijo';
-      return 'C# no te entiende. yo tampoco.';
+      if (m.includes('does not exist') || m.includes('not found')) return this.rotate('cs_exist', [
+        '¿lo inventaste o existe?', 'no encontrado. ¿seguro?',
+        'eso no existe por ningún lado',
+      ]);
+      if (m.includes('cannot convert')) return this.rotate('cs_type', [
+        'los tipos no mienten, mijo', 'type mismatch. clásico.',
+        '¿convertiste bien o nomás rezaste?',
+      ]);
+      return this.rotate('cs_generic', [
+        'C# no te entiende. yo tampoco.', 'error de C#. revisa.',
+        'el compilador está enojado', 'algo tronó por aquí',
+      ]);
     }
-    if (m.includes('cannot find') || m.includes('does not exist')) return '¿lo inventaste o existe?';
-    if (m.includes('not assignable') || m.includes('type'))        return 'los tipos no mienten, mijo';
-    if (m.includes('syntax'))   return '¿lo escribiste con los ojos cerrados?';
-    if (m.includes('missing'))  return 'le falta algo, revisa';
-    return 'ay, mijo... otro error';
+
+    if (m.includes('cannot find') || m.includes('does not exist')) return this.rotate('gen_exist', [
+      '¿lo inventaste o existe?', 'no encontrado en ningún lado',
+      'eso no existe, mijo',
+    ]);
+    if (m.includes('not assignable') || m.includes('type')) return this.rotate('gen_type', [
+      'los tipos no mienten, mijo', 'type error. clásico.',
+      '¿pusiste el tipo correcto o adivinaste?',
+    ]);
+    if (m.includes('syntax'))  return this.rotate('gen_syntax', [
+      '¿lo escribiste con los ojos cerrados?', 'syntax error. la puntuación importa.',
+      'le falta algo ahí',
+    ]);
+    if (m.includes('missing')) return this.rotate('gen_missing', [
+      'le falta algo, revisa', '¿qué le falta? algo le falta.',
+      'incompleto, mijo',
+    ]);
+
+    return this.rotate('gen_generic', [
+      'ay, mijo... otro error', 'tronó. ¿sorpresa?',
+      'error detectado. Xolito suspira.',
+      'algo está mal. algo.',
+      '¿leíste el error o lo ignoraste?',
+    ]);
   }
 
-  private warningPhrase(msg: string, _lang: string): string {
+  // ── Frases de warning expandidas ─────────────────────────
+  private warningPhrase(msg: string, lang: string): string {
     const m = msg.toLowerCase();
-    if (m.includes('unused'))     return 'declaraste y no usaste, típico';
-    if (m.includes('any'))        return 'usando "any"... muy valiente';
-    if (m.includes('deprecated')) return 'eso ya está viejito, actualiza';
-    if (m.includes('null'))       return 'cuidado con ese null ahí';
-    return 'cuidado con eso...';
+
+    if (m.includes('unused') || m.includes('never read')) return this.rotate('w_unused', [
+      'declaraste y no usaste, típico',
+      'variable de adorno. bonita pero inútil.',
+      'eso no lo usa nadie. ni tú.',
+      'declarada y abandonada. como tus propósitos.',
+    ]);
+    if (m.includes('implicit any') || m.includes(': any')) return this.rotate('w_any', [
+      'usando "any"... muy valiente',
+      'any. la rendición elegante de TypeScript.',
+      '¿no sabes el tipo o no quieres pensarlo?',
+      'any es para cuando ya te rendiste.',
+    ]);
+    if (m.includes('deprecated')) return this.rotate('w_deprecated', [
+      'eso ya está viejito, actualiza',
+      'deprecated. como tus excusas.',
+      'eso ya lo jubilaron, mijo.',
+      'usa la versión nueva, la vieja ya se fue.',
+    ]);
+    if (m.includes('null') || m.includes('undefined') || m.includes('possibly')) return this.rotate('w_null', [
+      'cuidado con ese null ahí',
+      'ese valor puede ser null. prepárate.',
+      'possible undefined. ¿ya validaste?',
+      'si eso es null, todo explota. fyi.',
+    ]);
+    if (m.includes('unreachable')) return this.rotate('w_unreachable', [
+      'código que nunca se ejecuta. fantasma.',
+      'unreachable. ni el compilador llega ahí.',
+      'eso no se ejecuta nunca. ¿lo sabías?',
+    ]);
+    if (m.includes('missing return') || m.includes('no return')) return this.rotate('w_return', [
+      '¿y el return? se te fue.',
+      'función sin return. ¿qué regresa? nada. nada regresa.',
+      'le falta el return, mijo.',
+    ]);
+    if (m.includes('never')) return this.rotate('w_never', [
+      'tipo never. eso no debería pasar... pero pasó.',
+      'never. xolito también tiene esperanzas never.',
+    ]);
+    if (m.includes('import') || m.includes('require')) return this.rotate('w_import', [
+      'importaste algo que no usas. típico.',
+      'ese import lleva aquí desde el principio del tiempo.',
+      '¿para qué importaste eso si no lo usas?',
+    ]);
+    if (lang === 'typescript' || lang === 'javascript') return this.rotate('w_ts_generic', [
+      'cuidado con eso...', 'warning de TS. léelo, no lo ignores.',
+      'el linter tiene razón. casi siempre.',
+    ]);
+
+    return this.rotate('w_generic', [
+      'cuidado con eso...', 'warning. no es error pero tampoco está bien.',
+      'el compilador te avisa. escúchalo.',
+      'advertencia. Xolito también te advierte.',
+    ]);
   }
 
+  // ── TODO rotado ───────────────────────────────────────────
+  private todoPhrase(): string {
+    const phrases = [
+      '¿este TODO tiene telarañas?',
+      'TODO de hace cuánto... ¿2022?',
+      'TODO: nunca. ese es el plan real.',
+      '¿cuándo lo vas a hacer? pregunta sincera.',
+      'tu yo del pasado te dejó tarea.',
+      'TODO abandonado. como tus propósitos de enero.',
+      'este TODO ya votó en las últimas elecciones.',
+      'spoiler: nunca se hace.',
+      '¿lo vas a hacer hoy o es decoración?',
+    ];
+    const i = this.todoCounter % phrases.length;
+    this.todoCounter++;
+    return phrases[i];
+  }
+
+  // ── Debug prints ──────────────────────────────────────────
   private debugPhrase(lang: string): string {
     const phrases: Record<string, string[]> = {
-      php:    ['var_dump detectado. clásico.', '¿ibas a subir esto a prod?'],
-      python: ['print de debug... ¿lo ibas a quitar?', 'muy artesanal tu debug'],
-      go:     ['Println de debug, ¿lo borramos?'],
-      csharp: ['Console.WriteLine en prod. clásico.', 'muy artesanal tu debug, cuate'],
-      default:['muy artesanal tu debug', '¿ibas a subir esto a prod, verdad?'],
+      php:     ['var_dump detectado. clásico.', '¿ibas a subir esto a prod?',
+                'print_r en prod. arte.'],
+      python:  ['print de debug... ¿lo ibas a quitar?', 'muy artesanal tu debug',
+                'print(). el debugger es tu amigo, mijo.'],
+      go:      ['Println de debug, ¿lo borramos?', 'fmt.Println. muy old school.'],
+      csharp:  ['Console.WriteLine en prod. clásico.', 'muy artesanal tu debug, cuate',
+                'Console.Write. ¿ibas a dejarlo?'],
+      rust:    ['println! de debug. ¿en serio?', 'muy artesanal para ser Rust.'],
+      java:    ['System.out.print. ¿no hay logger?', 'debug a mano en Java. respeto.'],
+      default: ['muy artesanal tu debug', '¿ibas a subir esto a prod, verdad?',
+                'debug print detectado. Xolito te vio.',
+                'console.log/print. la tradición que nunca muere.'],
     };
     const options = phrases[lang] ?? phrases['default'];
     return options[Math.floor(Math.random() * options.length)];

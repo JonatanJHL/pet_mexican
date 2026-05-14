@@ -2,7 +2,7 @@
   "name": "xolito-vscode",
   "displayName": "Xolito 🦎",
   "description": "Tu ajolote regañón para VS Code. Detecta errores, te regaña con cariño y habla español mexicano.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "xolito",
   "icon": "assets/xolito_idle.png",
   "repository": {
