@@ -2,7 +2,7 @@
   "name": "xolito-vscode",
   "displayName": "Xolito 🦎",
   "description": "Tu ajolote regañón para VS Code. Detecta errores, te regaña con cariño y habla español mexicano.",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "publisher": "xolito",
   "icon": "assets/xolito_idle.png",
   "repository": {
@@ -27,7 +27,9 @@
     "mexicano",
     "fun",
     "companion",
-    "xolito"
+    "xolito",
+    "boss mode",
+    "panic"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -46,6 +48,17 @@
       {
         "command": "xolito.toggle",
         "title": "🦎 Xolito: Toggle comentarios inline"
+      },
+      {
+        "command": "xolito.panicButton",
+        "title": "🦎 Xolito: ¡Ahí viene el patrón! (Boss Mode)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "xolito.panicButton",
+        "key": "shift+escape",
+        "when": "editorFocus"
       }
     ]
   },

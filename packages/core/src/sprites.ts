@@ -89,6 +89,14 @@ export const SPRITES: Record<XolitoMood, string[]> = {
     "  /|   |\\  ",
     " ~te_veo~~ ",
   ],
+
+  panic: [
+    "  ~(O_O)~  ",
+    "  /|💼  |\\  ",
+    "   | ! |   ",
+    "  /|   |\\  ",
+    " ~PATRON~~ ",
+  ],
 };
 
 /** Renderiza el sprite con una burbuja de diálogo encima */

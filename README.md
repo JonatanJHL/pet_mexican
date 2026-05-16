@@ -13,6 +13,7 @@ Regañón. Tierno. Sarcástico. 100% mexicano. 0% filtro.
 ![License](https://img.shields.io/badge/license-MIT-pink)
 ![Made in Mexico](https://img.shields.io/badge/Hecho%20en-México%20🇲🇽-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
+![Version](https://img.shields.io/visual-studio-marketplace/v/xolito.xolito-vscode?label=Marketplace)
 
 </div>
 
@@ -30,10 +31,9 @@ Vive en tu VS Code, detecta errores en tiempo real via LSP, y te regaña con car
 
 <div align="center">
 
-| | | | | |
-|:---:|:---:|:---:|:---:|:---:|
-| <img src="packages/vscode/assets/xolito_idle.png" width="80"/><br>**idle** | <img src="packages/vscode/assets/xolito_happy.png" width="80"/><br>**happy** | <img src="packages/vscode/assets/xolito_mad.png" width="80"/><br>**mad** | <img src="packages/vscode/assets/xolito_sassy.png" width="80"/><br>**sassy** | <img src="packages/vscode/assets/xolito_worried.png" width="80"/><br>**worried** |
-| <img src="packages/vscode/assets/xolito_proud.png" width="80"/><br>**proud** | <img src="packages/vscode/assets/xolito_hyped.png" width="80"/><br>**hyped** | <img src="packages/vscode/assets/xolito_tired.png" width="80"/><br>**tired** | <img src="packages/vscode/assets/xolito_judging.png" width="80"/><br>**judging** | <img src="packages/vscode/assets/xolito_idle.png" width="80"/><br>**sleepy** |
+| | | | | | |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| <img src="packages/vscode/assets/xolito_idle.png" width="72"/><br>**idle** | <img src="packages/vscode/assets/xolito_happy.png" width="72"/><br>**happy** | <img src="packages/vscode/assets/xolito_mad.png" width="72"/><br>**mad** | <img src="packages/vscode/assets/xolito_sassy.png" width="72"/><br>**sassy** | <img src="packages/vscode/assets/xolito_worried.png" width="72"/><br>**worried** | <img src="packages/vscode/assets/xolito_panic.png" width="72"/><br>**panic** |
 
 </div>
 
@@ -42,47 +42,50 @@ Vive en tu VS Code, detecta errores en tiempo real via LSP, y te regaña con car
 ## ✨ Features
 
 - 🔴 **Detecta errores LSP en tiempo real** — TypeScript, PHP, Python, Go, Rust, C#, Java
-- 💬 **Comentarios inline** — aparece junto a errores, warnings, `console.log` y TODOs
-- 🎨 **Sprites por mood** — cambia de cara según lo que detecta en tu código
-- 📊 **Panel con stats** — errores, warnings, racha y mood en tiempo real
-- 🌙 **Eventos especiales** — detecta coding nocturno, fin de semana, push a main
-- 🔇 **Toggle** — siléncialo cuando necesites concentrarte
+- 💬 **Comentarios inline con rotación** — frases distintas para cada tipo de error, sin repetirse
+- 🧠 **Memoria entre archivos** — Xolito recuerda si en el archivo anterior también la regaste
+- 🎨 **11 sprites por mood** — incluyendo `panic` con corbata para el jefe
+- 📊 **Panel de stats de sesión** — errores, warnings, builds, archivos, tiempo y nivel de estrés
+- 💼 **Modo Patrón** (`Shift+Esc`) — camufla tu pantalla cuando llega el jefe
+- 🌶️ **Linter de Chambazos** — detecta spanglish en nombres de variables (`fetchUsuarios`, `get_datos`)
+- 📈 **Sistema de estrés** — 5+ errores seguidos escalan el sarcasmo automáticamente
+- 🕐 **Contexto dinámico** — viernes 4pm y fines de semana activan frases de descanso
+- 🌙 **Eventos especiales** — coding nocturno, push a main, force push, merge conflicts
+- 🔇 **Toggle silencio** — se calla cuando lo necesitas
 - 🇲🇽 **100% mexicano** — frases en español con spanglish natural
+
+---
+
+## 💼 Modo Patrón
+
+`Shift+Esc` cuando se acerque el jefe:
+
+```
+Antes:  trabajando en mi_proyecto_secreto.ts
+Después: 💼 [PROD] cluster_matrix_balancer.cpp
+```
+
+Abre código C++ con templates avanzados, mutex y futuros. Al desactivar, regresa exactamente donde estabas.
 
 ---
 
 ## 📦 Instalación
 
-### VS Code
+### VS Code Marketplace
 
-1. Clona el repo y compila:
+```
+ext install xolito.xolito-vscode
+```
+
+### Desde código fuente
 
 ```bash
 git clone https://github.com/JonatanJHL/pet_mexican.git xolito
 cd xolito
 pnpm install
 cd packages/core && pnpm exec tsc
-cd ../vscode && pnpm exec tsc -p tsconfig.json
-```
-
-2. Abre en VS Code y presiona **F5**:
-
-```bash
-cd ../..
-code .
-# Presiona F5 → abre segunda ventana con Xolito instalado
-```
-
-3. Abre el panel: `Cmd+Shift+P` → **Mostrar Xolito**
-
-### Terminal (Claude Code)
-
-```bash
-npx @xolito/claude-code
-
-# O instalar global
-npm install -g @xolito/claude-code
-xolito
+cd ../vscode && node build.mjs
+# Presiona F5 en VS Code
 ```
 
 ---
@@ -90,30 +93,28 @@ xolito
 ## 💬 Frases de ejemplo
 
 ```
-🔴 Error detectado:
-  "Ay, mijo... otra vez. ¿No que muy bueno?"
-  "Failed. Así como tu dieta de enero, pero en código."
-  "¿Leíste el error o nomás lo cerraste?"
+💼 Modo Patrón activado:
+  "¡Disimula, disimula! ¡Ponte a leer código denso!"
+  "¡No voltees! Mirada fija como hacker ruso."
 
-✅ Build exitoso:
-  "Órale, compiló. No siempre la riegas, manito. 💚"
-  "Compiló limpio. Tu mamá estaría orgullosa."
+🌶️ Linter spanglish:
+  "fetchUsuarios. Mijo, consistencia. Elige un idioma."
 
-😴 Sin commits en 3 horas:
-  "Tres horas, compa. TU MAMÁ trabaja más rápido. Con todo respeto."
-  "Bro, git commit existe. Te lo juro. Lo acabo de checar."
+😤 5+ errores seguidos:
+  "El compilador te odia hoy. Respira."
+  "Párate, respira, lee el error completo. En serio."
+
+🍺 Viernes 4pm:
+  "Viernes 4pm. Cierra el IDE y agarra una chela."
+
+🔴 Error en otro archivo:
+  "¿Vienes huyendo del otro archivo? Aquí también hay errores."
 
 💀 Push a main:
   "¡Ay, cabrón! ¿Y el PR? ¿Lo dejaste en el carro?"
-  "Directo a main. Ora sí Dios nos agarre confesados."
 
 🌙 Coding nocturno:
-  "Son las 11pm y sigues aquí. Tu cama también te quiere, ¿eh?"
-  "Oye, ya duerme. Mañana lo ves y dices '¿quién hizo esto?'"
-
-🔍 console.log detectado:
-  "console.log('aquí llegué'). Clásico. Nunca cambia."
-  "Mijo, hay debuggers para eso. Los inventaron y todo."
+  "Son las 11pm y sigues aquí. Tu cama también te quiere."
 ```
 
 ---
@@ -125,47 +126,40 @@ xolito/
 ├── packages/
 │   ├── core/              ← lógica central, frases, sprites SVG
 │   │   └── src/
-│   │       ├── phrases.ts     ← banco de frases (anti-repetición)
-│   │       ├── xolito.ts      ← clase principal
-│   │       └── __tests__/     ← 52 tests con Vitest
+│   │       ├── phrases.ts         ← banco de frases por evento
+│   │       ├── xolito.ts          ← clase principal + sistema de estrés
+│   │       ├── types.ts           ← tipos y moods (incluye panic)
+│   │       └── sprites/
+│   │           └── generator.ts   ← generador SVG por mood
 │   ├── vscode/            ← extensión VS Code
-│   │   ├── src/
-│   │   │   ├── extension.ts         ← entry point
-│   │   │   ├── decorations.ts       ← inline comments
-│   │   │   └── diagnostics-watcher.ts ← LSP watcher
-│   │   └── assets/        ← sprites PNG por mood
+│   │   └── src/
+│   │       ├── extension.ts       ← boss mode, linter spanglish, contexto dinámico
+│   │       ├── decorations.ts     ← frases inline con rotación y memoria
+│   │       └── diagnostics-watcher.ts
 │   └── claude-code/       ← plugin de terminal
-├── pnpm-workspace.yaml
 └── README.md
 ```
 
 ---
 
-## 🤝 Contribuir
+## 🤝 Contribuir frases
 
-¿Tienes una frase más chida? ¿Un sprite más bonito? ¡Abre un PR!
+Las frases viven en dos archivos:
 
-### Agregar frases
+- **`packages/core/src/phrases.ts`** — notificaciones y panel (eventos como `build_fail`, `boss_alert`)
+- **`packages/vscode/src/decorations.ts`** — comentarios inline en el editor
 
-Edita `packages/core/src/phrases.ts`:
+Ver la [guía completa de contribución](packages/vscode/README.md) con ejemplos, reglas de tono y tabla de eventos.
 
-```typescript
-build_fail: [
-  { text: "Tu nueva frase aquí.", mood: 'mad' },
-],
-```
-
-**Reglas:**
-- Chistosas pero sin insultos reales — las mamadas son de carnal, no de enemigo
-- Sarcasmo con cariño
-- Mezcla español/inglés si se siente natural
-- Máximo 100 caracteres
-
-### Correr tests
+**Reglas básicas:**
+1. Regañonas pero con cariño — las mamadas son de carnal, no de enemigo
+2. Sarcasmo natural — que suene a cuate, no a IA
+3. Español mexicano o spanglish — mezcla si se siente natural
+4. Máximo 100 caracteres
+5. Asigna el mood correcto
 
 ```bash
-pnpm test           # 52 tests
-pnpm test:watch     # modo watch
+pnpm test           # 52+ tests
 pnpm test:coverage  # con cobertura
 ```
 

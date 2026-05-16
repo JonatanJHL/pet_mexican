@@ -7,10 +7,10 @@
 import type { XolitoMood } from '../types.js';
 
 export interface XolitoSpriteColors {
-  body:   string;  // color piel principal
-  belly:  string;  // barriga más clara
-  gill:   string;  // branquias
-  tattoo: string;  // tinta de tatuajes
+  body:   string;
+  belly:  string;
+  gill:   string;
+  tattoo: string;
 }
 
 export const MOOD_COLORS: Record<XolitoMood, XolitoSpriteColors> = {
@@ -24,6 +24,8 @@ export const MOOD_COLORS: Record<XolitoMood, XolitoSpriteColors> = {
   hyped:   { body:'#A8F4C0', belly:'#D0FFE0', gill:'#60E080', tattoo:'#0a2a0a' },
   tired:   { body:'#C8B8B8', belly:'#E8D8D8', gill:'#A89090', tattoo:'#1a1a1a' },
   judging: { body:'#F4A8C0', belly:'#FDDDE6', gill:'#E8729A', tattoo:'#1a1a1a' },
+  // panic: verde consola apagado — modo godín activado
+  panic:   { body:'#B8C8A8', belly:'#D8E8C8', gill:'#88A868', tattoo:'#0a1a0a' },
 };
 
 type MouthExpr = 'smile' | 'bigsmile' | 'frown' | 'smirk' | 'sleepy' | 'worried' | 'tired' | 'judging';
@@ -39,6 +41,7 @@ export const MOOD_EXPR: Record<XolitoMood, MouthExpr> = {
   hyped:   'bigsmile',
   tired:   'tired',
   judging: 'judging',
+  panic:   'worried',
 };
 
 // ── Helpers de color ─────────────────────────────────────────
@@ -59,11 +62,12 @@ function darkenHex(hex: string, amount: number): string {
 // ── Generador principal ───────────────────────────────────────
 
 export function generateSpriteSVG(mood: XolitoMood, size = 120): string {
-  const c      = MOOD_COLORS[mood];
-  const expr   = MOOD_EXPR[mood];
-  const isMad  = mood === 'mad';
+  const c       = MOOD_COLORS[mood];
+  const expr    = MOOD_EXPR[mood];
+  const isMad   = mood === 'mad' || mood === 'panic';
   const isSleep = mood === 'sleepy' || mood === 'tired';
   const isProud = mood === 'proud'  || mood === 'hyped';
+  const isPanic = mood === 'panic';
 
   const cx     = size / 2;
   const headY  = size * 0.28;
@@ -75,12 +79,11 @@ export function generateSpriteSVG(mood: XolitoMood, size = 120): string {
 
   const black  = '#1a1a1a';
   const white  = '#f5f5f5';
-  const khaki  = '#C8B48A';
-  const khakiD = '#A8946A';
+  const khaki  = isPanic ? '#2a3a2a' : '#C8B48A';
+  const khakiD = isPanic ? '#1a2a1a' : '#A8946A';
   const chainC = '#C0C0C0';
   const skin   = darkenHex(c.body, 12);
 
-  // ── Boca ────────────────────────────────────────────────────
   const mouths: Record<MouthExpr, string> = {
     smile:    `<path d="M${cx-10},${headY+10} Q${cx},${headY+17} ${cx+10},${headY+10}" fill="none" stroke="${skin}" stroke-width="2" stroke-linecap="round"/>`,
     bigsmile: `<path d="M${cx-12},${headY+8} Q${cx},${headY+19} ${cx+12},${headY+8}" fill="none" stroke="${skin}" stroke-width="2.5" stroke-linecap="round"/>`,
@@ -93,7 +96,6 @@ export function generateSpriteSVG(mood: XolitoMood, size = 120): string {
                <circle cx="${cx+11}" cy="${headY+7}" r="1.5" fill="${skin}"/>`,
   };
 
-  // ── Ojos ─────────────────────────────────────────────────────
   function eyeNormal(ex: number): string {
     return `<ellipse cx="${ex}" cy="${headY-3}" rx="4" ry="4" fill="${black}"/>
             <circle  cx="${ex+1.5}" cy="${headY-4.5}" r="1.5" fill="white" opacity="0.9"/>`;
@@ -124,11 +126,15 @@ export function generateSpriteSVG(mood: XolitoMood, size = 120): string {
        <text font-size="8"  x="${cx+38}" y="${headY-12}" fill="${c.gill}">✦</text>`
     : '';
 
-  // ── SVG completo ────────────────────────────────────────────
+  // Corbata para modo pánico
+  const tie = isPanic
+    ? `<path d="M${cx-5},${headY+hRy+2} L${cx},${headY+hRy+8} L${cx+5},${headY+hRy+2} L${cx+3},${headY+hRy-2} L${cx-3},${headY+hRy-2}Z" fill="#1a1a1a" stroke="#333" stroke-width="0.5"/>
+       <line x1="${cx}" y1="${headY+hRy+8}" x2="${cx}" y2="${bodyY-bRy}" stroke="#1a1a1a" stroke-width="4"/>`
+    : '';
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size + 24}"
          viewBox="0 0 ${size} ${size + 24}">
   <title>Xolito — mood: ${mood}</title>
-  <desc>Xolito el ajolote cholo en modo ${mood}</desc>
 
   ${stars}
 
@@ -136,23 +142,18 @@ export function generateSpriteSVG(mood: XolitoMood, size = 120): string {
   <ellipse cx="${cx + bRx + 20}" cy="${bodyY + 9}" rx="22" ry="10" fill="${c.body}" opacity="0.9"/>
   <ellipse cx="${cx + bRx + 33}" cy="${bodyY + 9}" rx="13" ry="7"  fill="${c.gill}" opacity="0.7"/>
 
-  <!-- Pantalón khaki -->
+  <!-- Pantalón -->
   <rect x="${cx - bRx + 2}" y="${bodyY + 4}" width="${(bRx - 1) * 2}" height="${size * 0.30}" rx="4" fill="${khaki}"/>
   <rect x="${cx - bRx + 2}" y="${bodyY + 4}" width="${(bRx - 1) * 2}" height="4" fill="${khakiD}"/>
-  <!-- Cinturón -->
   <rect x="${cx - bRx + 2}" y="${bodyY + 3}" width="${(bRx - 1) * 2}" height="5" rx="1" fill="${black}"/>
   <rect x="${cx - 3}"        y="${bodyY + 2}" width="6"               height="7" rx="1" fill="#888888" stroke="#cccccc" stroke-width="0.5"/>
-  <!-- Piernas -->
   <rect x="${cx - bRx + 2}" y="${bodyY + size * 0.20}" width="${bRx - 3}" height="${size * 0.18}" rx="4" fill="${khaki}"/>
   <rect x="${cx + 3}"        y="${bodyY + size * 0.20}" width="${bRx - 3}" height="${size * 0.18}" rx="4" fill="${khaki}"/>
-  <!-- Vans izquierda -->
   <rect x="${cx - bRx + 1}" y="${bodyY + size * 0.335}" width="${bRx - 2}" height="${size * 0.07}" rx="3" fill="${black}"/>
   <rect x="${cx - bRx + 1}" y="${bodyY + size * 0.335}" width="${bRx - 2}" height="${size * 0.028}" rx="2" fill="${white}" opacity="0.8"/>
-  <!-- Vans derecha -->
   <rect x="${cx + 4}"        y="${bodyY + size * 0.335}" width="${bRx - 2}" height="${size * 0.07}" rx="3" fill="${black}"/>
   <rect x="${cx + 4}"        y="${bodyY + size * 0.335}" width="${bRx - 2}" height="${size * 0.028}" rx="2" fill="${white}" opacity="0.8"/>
 
-  <!-- Cadena wallet -->
   <path d="M${cx - bRx + 8},${bodyY + size * 0.10} Q${cx - bRx - 2},${bodyY + size * 0.22} ${cx - bRx + 4},${bodyY + size * 0.30}"
         fill="none" stroke="${chainC}" stroke-width="1.2" stroke-dasharray="3,2"/>
 
@@ -160,7 +161,6 @@ export function generateSpriteSVG(mood: XolitoMood, size = 120): string {
   <ellipse cx="${cx}"     cy="${bodyY}"     rx="${bRx}"         ry="${bRy}"         fill="${c.body}"/>
   <ellipse cx="${cx + 2}" cy="${bodyY + 3}" rx="${bRx * 0.6}"   ry="${bRy * 0.65}"  fill="${c.belly}" opacity="0.7"/>
 
-  <!-- Tatuaje "Hecho en México" brazo izq -->
   <text font-size="5.5" font-weight="700" font-family="monospace" fill="${c.tattoo}"
         transform="rotate(-15,${cx - bRx - 2},${bodyY - 8})">
     <tspan x="${cx - bRx - 2}" y="${bodyY - 13}">HECHO EN</tspan>
@@ -171,27 +171,24 @@ export function generateSpriteSVG(mood: XolitoMood, size = 120): string {
   <ellipse cx="${cx - bRx - 5}" cy="${bodyY - 6}" rx="7" ry="12" fill="${c.body}" transform="rotate(-15,${cx - bRx - 5},${bodyY - 6})"/>
   <ellipse cx="${cx + bRx + 5}" cy="${bodyY - 6}" rx="7" ry="12" fill="${c.body}" transform="rotate(15,${cx + bRx + 5},${bodyY - 6})"/>
 
-  <!-- Paliacate negro -->
+  <!-- Paliacate -->
   <path d="M${cx - 14},${headY + hRy - 2}
            Q${cx},${headY + hRy + 18} ${cx + 14},${headY + hRy - 2}
            Q${cx + 6},${headY + hRy + 10} ${cx},${headY + hRy + 22}
            Q${cx - 6},${headY + hRy + 10} ${cx - 14},${headY + hRy - 2}Z"
         fill="#1a1a1a" opacity="0.92"/>
-  <!-- Patrón bandana -->
   <circle cx="${cx - 6}" cy="${headY + hRy + 6}"  r="1" fill="white" opacity="0.25"/>
   <circle cx="${cx + 0}" cy="${headY + hRy + 11}"  r="1" fill="white" opacity="0.25"/>
   <circle cx="${cx + 6}" cy="${headY + hRy + 6}"   r="1" fill="white" opacity="0.25"/>
-  <circle cx="${cx - 3}" cy="${headY + hRy + 15}"  r="1" fill="white" opacity="0.25"/>
-  <circle cx="${cx + 3}" cy="${headY + hRy + 15}"  r="1" fill="white" opacity="0.25"/>
+
+  <!-- Corbata (modo pánico) -->
+  ${tie}
 
   <!-- Cabeza -->
   <ellipse cx="${cx}"     cy="${headY}"     rx="${hRx}"         ry="${hRy}"          fill="${c.body}"/>
-  <!-- Manchitas de piel -->
   <circle cx="${cx - 5}"  cy="${headY - 9}" r="1.5" fill="${skin}" opacity="0.4"/>
   <circle cx="${cx + 8}"  cy="${headY - 5}" r="1"   fill="${skin}" opacity="0.35"/>
   <circle cx="${cx - 10}" cy="${headY + 2}" r="1.2" fill="${skin}" opacity="0.35"/>
-  <circle cx="${cx + 4}"  cy="${headY + 6}" r="0.8" fill="${skin}" opacity="0.3"/>
-  <!-- Barriguita cara -->
   <ellipse cx="${cx + 3}" cy="${headY + 4}" rx="${hRx * 0.55}" ry="${hRy * 0.55}" fill="${c.belly}" opacity="0.5"/>
 
   <!-- Branquias izquierda -->
@@ -209,22 +206,19 @@ export function generateSpriteSVG(mood: XolitoMood, size = 120): string {
   <circle cx="${cx + hRx + 11}"cy="${headY - 31}" r="4"   fill="${c.gill}"/>
   <circle cx="${cx + hRx - 7}" cy="${headY - 31}" r="3.5" fill="${c.gill}"/>
 
-  <!-- Ojos -->
   ${eyeLeft}
   ${eyeRight}
-  <!-- Mejillas -->
   ${cheeks}
-  <!-- Boca -->
   ${mouths[expr]}
 
 </svg>`;
 }
 
-/** Genera y guarda todos los sprites como archivos .svg */
+/** Genera todos los sprites */
 export function getAllSprites(size = 120): Record<XolitoMood, string> {
   const moods: XolitoMood[] = [
     'idle','happy','mad','sleepy','sassy',
-    'proud','worried','hyped','tired','judging',
+    'proud','worried','hyped','tired','judging','panic',
   ];
   return Object.fromEntries(
     moods.map(m => [m, generateSpriteSVG(m, size)])

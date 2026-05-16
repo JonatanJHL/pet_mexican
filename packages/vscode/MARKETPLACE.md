@@ -30,11 +30,26 @@ Vive en tu barra lateral, vigila tu editor en tiempo real y te comenta cada erro
 
 - 🔴 **Detecta errores LSP en tiempo real** — TypeScript, PHP, Python, Go, Rust, C#, Java y más
 - 💬 **Comentarios inline junto a tus errores** — aparece exactamente donde la regaste
-- 🎨 **10 expresiones animadas** — cambia de cara según lo que detecta: mad, happy, judging, tired, hyped...
-- 📊 **Panel de stats en vivo** — errores, warnings, racha y mood actual
-- 🌙 **Eventos especiales** — coding nocturno, fin de semana, push directo a `main`...
+- 🎨 **11 expresiones animadas** — idle, happy, mad, sassy, worried, proud, hyped, tired, judging, sleepy y **panic**
+- 📊 **Panel de stats de sesión** — errores, warnings, builds, archivos tocados, tiempo y nivel de estrés
+- 💼 **Modo Patrón** (`Shift+Esc`) — camufla tu pantalla cuando se acerca el jefe
+- 🌶️ **Linter de Chambazos** — detecta código en spanglish (`fetchUsuarios`, `get_datos`) y te lo dice
+- 📈 **Sistema de estrés** — si acumulas 5+ errores seguidos, Xolito escala su nivel de sarcasmo
+- 🕐 **Contexto dinámico** — viernes después de las 4pm y fines de semana activan frases especiales
+- 🌙 **Eventos especiales** — coding nocturno, push a main, force push, merge conflicts
 - 🔇 **Toggle on/off** — siléncialo cuando necesites concentrarte (sin drama)
 - 🇲🇽 **100% en español mexicano** — con spanglish natural, sin filtros
+
+---
+
+## 💼 Modo Patrón — Boss Mode
+
+Presiona `Shift+Esc` cuando se acerque tu jefe:
+
+- La status bar se camufla: `💼 [PROD] cluster_matrix_balancer.cpp`
+- Se abre automáticamente código C++ ultra-complejo con templates, mutex y futuros
+- Xolito se pone serio con corbata y cara de pánico profesional
+- Al presionar `Shift+Esc` de nuevo: cierra el archivo dummy y regresa exactamente donde estabas
 
 ---
 
@@ -43,36 +58,44 @@ Vive en tu barra lateral, vigila tu editor en tiempo real y te comenta cada erro
 ```
 🔴 Al detectar un error:
   "Ay, mijo... otra vez. ¿No que muy bueno?"
-  "¿Leíste el error o nomás lo cerraste?"
+  "¿recuerdas que en el otro archivo también la regaste?"
   "Failed. Así como tu dieta de enero, pero en código."
 
 ✅ Al compilar limpio:
   "Órale, compiló. No siempre la riegas, manito. 💚"
   "Compiló limpio. Tu mamá estaría orgullosa."
 
+💼 Al activar el Modo Patrón:
+  "¡Disimula, disimula! ¡Ponte a leer código denso!"
+  "¡Ahí viene el jefe! Modo ultra-godín activado."
+
+🌶️ Linter spanglish:
+  "fetchUsuarios. Mijo, consistencia. Elige un idioma."
+  "get_datos detectado. ¿Español o inglés? Decide."
+
+😤 Con 5+ errores seguidos:
+  "El compilador te odia hoy. Respira."
+  "Párate, respira, lee el error completo. En serio."
+
+🍺 Viernes después de las 4pm:
+  "Viernes 4pm. Cierra el IDE y agarra una chela."
+  "Son las 4 del viernes. El código puede esperar, tú no."
+
 😴 Sin commits en 3+ horas:
   "Tres horas, compa. Git commit existe. Te lo juro."
-  "Bro, ¿estás vivo? Manda señales."
 
 💀 Push directo a main:
   "¡Ay, cabrón! ¿Y el PR? ¿Lo dejaste en el carro?"
-  "Directo a main. Ora sí Dios nos agarre confesados."
-
-🌙 Coding nocturno:
-  "Son las 11pm y sigues aquí. Tu cama también te quiere, ¿eh?"
-
-🔍 Al ver un console.log:
-  "console.log('aquí llegué'). Clásico. Nunca cambia."
 ```
 
 ---
 
 ## 🎭 Sus estados de ánimo
 
-| | | | | |
-|:---:|:---:|:---:|:---:|:---:|
-| 😌 idle | 😄 happy | 😤 mad | 💅 sassy | 😟 worried |
-| 😤 proud | ⚡ hyped | 😪 tired | 🧐 judging | 😴 sleepy |
+| | | | | | |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| 😌 idle | 😄 happy | 😤 mad | 💅 sassy | 😟 worried | 😤 proud |
+| ⚡ hyped | 😪 tired | 🧐 judging | 😴 sleepy | 💼 **panic** | |
 
 ---
 
@@ -80,10 +103,14 @@ Vive en tu barra lateral, vigila tu editor en tiempo real y te comenta cada erro
 
 1. Instala la extensión
 2. Abre cualquier proyecto
-3. Presiona `Ctrl+Shift+P` (o `Cmd+Shift+P` en Mac) y escribe **"Mostrar Xolito"**
-4. Xolito aparece en tu barra lateral y empieza a vigilarte
+3. `Cmd+Shift+P` → **"Mostrar Xolito"** para abrir el panel
+4. Xolito empieza a vigilarte automáticamente
 
-**Toggle de comentarios inline:** `Ctrl+Shift+P` → *"Xolito: Toggle comentarios inline"*
+| Comando | Atajo | Descripción |
+|---------|-------|-------------|
+| Mostrar Xolito | — | Abre el panel lateral |
+| Toggle inline | `Cmd+Shift+P` | Activa/desactiva comentarios en código |
+| **Modo Patrón** | **`Shift+Esc`** | Camufla tu pantalla (boss mode) |
 
 ---
 

@@ -13,7 +13,8 @@ export type XolitoMood =
   | 'worried'     // warning en el código
   | 'hyped'       // primer commit del día
   | 'tired'       // muchos errores seguidos
-  | 'judging';    // mirándote fijamente sin decir nada
+  | 'judging'    // mirándote fijamente sin decir nada
+  | 'panic'; // error crítico, el boos esta mirando
 
 export type XolitoEvent =
   | 'build_success'
@@ -38,7 +39,8 @@ export type XolitoEvent =
   | 'deleted_tests'
   | 'idle_10min'
   | 'idle_30min'
-  | 'greeted';            // primera vez que lo saluda
+  | 'greeted'         // primera vez que lo saluda
+  | 'boss_alert';
 
 export interface XolitoConfig {
   name?: string;             // nombre del ajolote (default: Xolito)
