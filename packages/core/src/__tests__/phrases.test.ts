@@ -17,12 +17,13 @@ const ALL_EVENTS: XolitoEvent[] = [
   'console_log_left', 'todo_comment', 'merge_conflict',
   'late_night_coding', 'weekend_coding', 'git_force_push',
   'deleted_tests', 'idle_10min', 'idle_30min', 'greeted',
+  'boss_alert',
 ];
 
 // Todos los moods válidos
 const VALID_MOODS: XolitoMood[] = [
   'idle', 'happy', 'mad', 'sleepy', 'sassy',
-  'proud', 'worried', 'hyped', 'tired', 'judging',
+  'proud', 'worried', 'hyped', 'tired', 'judging', 'panic',
 ];
 
 // ── Estructura del banco de frases ───────────────────────────
@@ -153,7 +154,6 @@ describe('getPhrase() — función de selección', () => {
   });
 
   it('tiene aleatoriedad — no siempre regresa la misma frase', () => {
-    // build_fail tiene 9 frases, después de 30 intentos debe haber variedad
     const textos = new Set<string>();
     for (let i = 0; i < 30; i++) {
       textos.add(getPhrase('build_fail').text);
@@ -178,19 +178,16 @@ describe('getPhrase() — función de selección', () => {
     const phrase = getPhrase('evento_inventado_que_no_existe');
     expect(phrase).toBeDefined();
     expect(phrase.text).toBeTruthy();
-    // Xolito no debe tronar, solo juzgarte en silencio
     expect(phrase.mood).toBe('judging');
   });
 
   it('selecciona frases de todo el arreglo con distribución razonable', () => {
-    // Con 100 intentos en build_fail (9 frases), cada frase debe salir al menos una vez
-    // Probabilidad de que una frase específica NO salga en 100 intentos: (8/9)^100 ≈ 0.0000009
     const textos = new Set<string>();
     for (let i = 0; i < 100; i++) {
       textos.add(getPhrase('build_fail').text);
     }
     expect(textos.size).toBeGreaterThanOrEqual(
-      PHRASES.build_fail.length - 1 // permitimos que una se quede sin salir
+      PHRASES.build_fail.length - 1
     );
   });
 
@@ -209,7 +206,7 @@ describe('PHRASES — cobertura de moods', () => {
     }
     expect(
       moodsUsados.size,
-      `Solo se usan ${moodsUsados.size} moods de ${VALID_MOODS.length} disponibles`
+      `Solo se usan ${moodsUsados.size} moods disponibles`
     ).toBeGreaterThanOrEqual(7);
   });
 
@@ -221,7 +218,6 @@ describe('PHRASES — cobertura de moods', () => {
       }
     }
     const maxMood = Object.entries(conteo).sort((a, b) => b[1] - a[1])[0][0];
-    // sassy o mad deben ser los más comunes — Xolito es regañón
     expect(['sassy', 'mad']).toContain(maxMood);
   });
 
