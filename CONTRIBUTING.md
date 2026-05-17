@@ -51,4 +51,4 @@
 ---
 
 *"El código sin comentarios es como un taco sin salsa. Técnicamente funciona, pero ¿a qué costo?"*
-— Xolito, 2025
+— Xolito, 2026
