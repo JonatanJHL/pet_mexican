@@ -6,13 +6,14 @@
 
 > *"Aquí estoy, cuidándote... y juzgándote con cariño."*
 
-**Tu ajolote regañón para VS Code y la terminal.**  
+**Tu ajolote regañón para VS Code.**  
 Regañón. Tierno. Sarcástico. 100% mexicano. 0% filtro.
 
 ![CI](https://github.com/JonatanJHL/pet_mexican/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/badge/license-MIT-pink)
 ![Made in Mexico](https://img.shields.io/badge/Hecho%20en-México%20🇲🇽-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
+![Version](https://img.shields.io/visual-studio-marketplace/v/xolito.xolito-vscode?label=Marketplace)
 
 </div>
 
@@ -20,9 +21,9 @@ Regañón. Tierno. Sarcástico. 100% mexicano. 0% filtro.
 
 ## ¿Qué es Xolito?
 
-Xolito es una mascota virtual inspirada en el **ajolote mexicano** (*Ambystoma mexicanum*) — la especie endémica de México que nunca termina de madurar. Igual que nuestro código.
+Xolito es una mascota virtual inspirada en el **ajolote mexicano** — la especie endémica de México que nunca termina de madurar. Igual que nuestro código.
 
-Vive en tu VS Code, detecta errores en tiempo real via LSP, y te regaña con cariño en español mexicano.
+Vive en tu VS Code, detecta errores LSP en tiempo real y te regaña con cariño en español mexicano.
 
 ---
 
@@ -30,10 +31,9 @@ Vive en tu VS Code, detecta errores en tiempo real via LSP, y te regaña con car
 
 <div align="center">
 
-| | | | | |
-|:---:|:---:|:---:|:---:|:---:|
-| <img src="packages/vscode/assets/xolito_idle.png" width="80"/><br>**idle** | <img src="packages/vscode/assets/xolito_happy.png" width="80"/><br>**happy** | <img src="packages/vscode/assets/xolito_mad.png" width="80"/><br>**mad** | <img src="packages/vscode/assets/xolito_sassy.png" width="80"/><br>**sassy** | <img src="packages/vscode/assets/xolito_worried.png" width="80"/><br>**worried** |
-| <img src="packages/vscode/assets/xolito_proud.png" width="80"/><br>**proud** | <img src="packages/vscode/assets/xolito_hyped.png" width="80"/><br>**hyped** | <img src="packages/vscode/assets/xolito_tired.png" width="80"/><br>**tired** | <img src="packages/vscode/assets/xolito_judging.png" width="80"/><br>**judging** | <img src="packages/vscode/assets/xolito_idle.png" width="80"/><br>**sleepy** |
+| | | | | | |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| <img src="packages/vscode/assets/xolito_idle.png" width="72"/><br>**idle** | <img src="packages/vscode/assets/xolito_happy.png" width="72"/><br>**happy** | <img src="packages/vscode/assets/xolito_mad.png" width="72"/><br>**mad** | <img src="packages/vscode/assets/xolito_sassy.png" width="72"/><br>**sassy** | <img src="packages/vscode/assets/xolito_worried.png" width="72"/><br>**worried** | <img src="packages/vscode/assets/xolito_panic.png" width="72"/><br>**panic** |
 
 </div>
 
@@ -42,47 +42,52 @@ Vive en tu VS Code, detecta errores en tiempo real via LSP, y te regaña con car
 ## ✨ Features
 
 - 🔴 **Detecta errores LSP en tiempo real** — TypeScript, PHP, Python, Go, Rust, C#, Java
-- 💬 **Comentarios inline** — aparece junto a errores, warnings, `console.log` y TODOs
-- 🎨 **Sprites por mood** — cambia de cara según lo que detecta en tu código
-- 📊 **Panel con stats** — errores, warnings, racha y mood en tiempo real
-- 🌙 **Eventos especiales** — detecta coding nocturno, fin de semana, push a main
-- 🔇 **Toggle** — siléncialo cuando necesites concentrarte
+- 💬 **Comentarios inline con rotación** — frases distintas por tipo de error, sin repetirse
+- 🧠 **Memoria entre archivos** — recuerda si en el archivo anterior también la regaste
+- 🎨 **11 sprites por mood** — incluyendo `panic` con corbata para el jefe
+- 📊 **Panel con stats de sesión** — errores, warnings, builds, archivos, tiempo y nivel de estrés
+- 💼 **Modo Patrón** (`Shift+Esc`) — camufla tu pantalla cuando llega el jefe
+- 🌶️ **Linter de Chambazos** — detecta spanglish en nombres (`fetchUsuarios`, `get_datos`)
+- 📈 **Sistema de estrés** — 5+ errores seguidos escalan el sarcasmo automáticamente
+- 🕐 **Contexto dinámico** — viernes 4pm y fines de semana activan frases de descanso
+- 🌙 **Eventos especiales** — coding nocturno, push a main, force push, merge conflicts
+- 🔇 **Toggle silencio** — se calla cuando lo necesitas
 - 🇲🇽 **100% mexicano** — frases en español con spanglish natural
+
+---
+
+## 💼 Modo Patrón — `Shift+Esc`
+
+Presiona `Shift+Esc` cuando se acerque el jefe:
+
+```
+Antes:  🦎 Compiló limpio. Tu mamá estaría orgullosa.
+Después: 💼 [PROD] cluster_matrix_balancer.cpp
+```
+
+- Se abre un archivo C++ con templates, mutex y operaciones atómicas
+- Xolito se pone serio con corbata y fondo verde consola
+- Al presionar `Shift+Esc` de nuevo: cierra el dummy y regresa a donde estabas
 
 ---
 
 ## 📦 Instalación
 
-### VS Code
+### VS Code Marketplace
 
-1. Clona el repo y compila:
+```
+ext install xolito.xolito-vscode
+```
+
+### Desde código fuente
 
 ```bash
 git clone https://github.com/JonatanJHL/pet_mexican.git xolito
 cd xolito
 pnpm install
 cd packages/core && pnpm exec tsc
-cd ../vscode && pnpm exec tsc -p tsconfig.json
-```
-
-2. Abre en VS Code y presiona **F5**:
-
-```bash
-cd ../..
-code .
-# Presiona F5 → abre segunda ventana con Xolito instalado
-```
-
-3. Abre el panel: `Cmd+Shift+P` → **Mostrar Xolito**
-
-### Terminal (Claude Code)
-
-```bash
-npx @xolito/claude-code
-
-# O instalar global
-npm install -g @xolito/claude-code
-xolito
+cd ../vscode && node build.mjs
+# Presiona F5 en VS Code
 ```
 
 ---
@@ -90,30 +95,27 @@ xolito
 ## 💬 Frases de ejemplo
 
 ```
-🔴 Error detectado:
+🔴 Error:
   "Ay, mijo... otra vez. ¿No que muy bueno?"
-  "Failed. Así como tu dieta de enero, pero en código."
-  "¿Leíste el error o nomás lo cerraste?"
+  "¿recuerdas que en el otro archivo también la regaste?"
 
 ✅ Build exitoso:
-  "Órale, compiló. No siempre la riegas, manito. 💚"
   "Compiló limpio. Tu mamá estaría orgullosa."
 
-😴 Sin commits en 3 horas:
-  "Tres horas, compa. TU MAMÁ trabaja más rápido. Con todo respeto."
-  "Bro, git commit existe. Te lo juro. Lo acabo de checar."
+💼 Boss Mode activado:
+  "¡Disimula, disimula! ¡Ponte a leer código denso!"
+
+🌶️ Spanglish detectado:
+  "fetchUsuarios. Mijo, consistencia. Elige un idioma."
+
+😤 5+ errores seguidos:
+  "El compilador te odia hoy. Respira."
+
+🍺 Viernes 4pm:
+  "Viernes 4pm. Cierra el IDE y agarra una chela."
 
 💀 Push a main:
   "¡Ay, cabrón! ¿Y el PR? ¿Lo dejaste en el carro?"
-  "Directo a main. Ora sí Dios nos agarre confesados."
-
-🌙 Coding nocturno:
-  "Son las 11pm y sigues aquí. Tu cama también te quiere, ¿eh?"
-  "Oye, ya duerme. Mañana lo ves y dices '¿quién hizo esto?'"
-
-🔍 console.log detectado:
-  "console.log('aquí llegué'). Clásico. Nunca cambia."
-  "Mijo, hay debuggers para eso. Los inventaron y todo."
 ```
 
 ---
@@ -123,49 +125,41 @@ xolito
 ```
 xolito/
 ├── packages/
-│   ├── core/              ← lógica central, frases, sprites SVG
+│   ├── core/              ← lógica central, frases, sistema de estrés
 │   │   └── src/
-│   │       ├── phrases.ts     ← banco de frases (anti-repetición)
-│   │       ├── xolito.ts      ← clase principal
-│   │       └── __tests__/     ← 52 tests con Vitest
+│   │       ├── phrases.ts         ← banco de frases por evento
+│   │       ├── xolito.ts          ← clase principal
+│   │       ├── types.ts           ← tipos y 11 moods
+│   │       └── sprites/generator.ts ← generador SVG por mood
 │   ├── vscode/            ← extensión VS Code
-│   │   ├── src/
-│   │   │   ├── extension.ts         ← entry point
-│   │   │   ├── decorations.ts       ← inline comments
-│   │   │   └── diagnostics-watcher.ts ← LSP watcher
-│   │   └── assets/        ← sprites PNG por mood
-│   └── claude-code/       ← plugin de terminal
-├── pnpm-workspace.yaml
+│   │   └── src/
+│   │       ├── extension.ts       ← boss mode, linter, contexto dinámico
+│   │       ├── decorations.ts     ← inline comments con rotación
+│   │       └── diagnostics-watcher.ts
+│   └── claude-code/       ← plugin de terminal (WIP)
 └── README.md
 ```
 
 ---
 
-## 🤝 Contribuir
+## 🤝 Contribuir frases
 
-¿Tienes una frase más chida? ¿Un sprite más bonito? ¡Abre un PR!
+Las frases viven en dos archivos:
 
-### Agregar frases
-
-Edita `packages/core/src/phrases.ts`:
+- **`packages/core/src/phrases.ts`** — notificaciones y panel
+- **`packages/vscode/src/decorations.ts`** — comentarios inline
 
 ```typescript
+// Agregar frase en phrases.ts
 build_fail: [
   { text: "Tu nueva frase aquí.", mood: 'mad' },
 ],
 ```
 
-**Reglas:**
-- Chistosas pero sin insultos reales — las mamadas son de carnal, no de enemigo
-- Sarcasmo con cariño
-- Mezcla español/inglés si se siente natural
-- Máximo 100 caracteres
-
-### Correr tests
+**Reglas:** máx 100 chars · sarcasmo con cariño · español mexicano o spanglish · mood correcto
 
 ```bash
-pnpm test           # 52 tests
-pnpm test:watch     # modo watch
+pnpm test           # 52+ tests
 pnpm test:coverage  # con cobertura
 ```
 

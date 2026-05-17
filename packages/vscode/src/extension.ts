@@ -584,11 +584,16 @@ async function handlePanicButton(): Promise<void> {
     statusBar.tooltip = undefined;
 
     // Cerrar el archivo dummy si sigue abierto
-    const activeEditor = vscode.window.activeTextEditor;
-    if (activeEditor && dummyDocUri &&
-        activeEditor.document.uri.toString() === dummyDocUri.toString()) {
-      await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+    if (dummyDocUri) {
+    for (const tabGroup of vscode.window.tabGroups.all) {
+      for (const tab of tabGroup.tabs) {
+        const input = tab.input as any;
+        if (input?.uri?.toString() === dummyDocUri.toString()) {
+          await vscode.window.tabGroups.close(tab);
+        }
+      }
     }
+  }
 
     // Regresar al archivo real
     if (originalEditor) {
