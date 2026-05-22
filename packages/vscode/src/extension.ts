@@ -290,9 +290,10 @@ function onTaskEnd(e: vscode.TaskProcessEndEvent): void {
 
 // ── onTerminalData ────────────────────────────────────────────
 function onTerminalData(data: string): void {
-  // Deploy Suicida — detecta deploy en viernes
-  const isFriday = new Date().getDay() === 5;
-  if (isFriday && /npm run (deploy|release|prod)|vercel|netlify deploy/i.test(data)) {
+  // Deploy Suicida — viernes, sábado y domingo
+  const day = new Date().getDay();
+  const isDeployDanger = day === 5 || day === 6 || day === 0;
+  if (isDeployDanger && /npm run (deploy|release|prod)|vercel|netlify deploy/i.test(data)) {
     if (!deployFridayActive) {
       deployFridayActive = true;
       triggerDeployFriday();
@@ -303,21 +304,37 @@ function onTerminalData(data: string): void {
   else if (/git push.*origin (main|master)/i.test(data))    fireEvent('push_to_main');
   else if (/npm install|pnpm install|yarn add/i.test(data)) fireEvent('npm_install');
   else if (/CONFLICT \(content\)/i.test(data))              fireEvent('merge_conflict');
-  const h = new Date().getHours(), day = new Date().getDay();
+  const h = new Date().getHours(), dow = new Date().getDay();
   if (h >= 23 || h < 4)       fireEvent('late_night_coding');
-  if (day === 0 || day === 6) fireEvent('weekend_coding');
+  if (dow === 0 || dow === 6) fireEvent('weekend_coding');
 }
 
 
 // ── Deploy Suicida ────────────────────────────────────────────
 async function triggerDeployFriday(): Promise<void> {
-  const phrases = [
-    "NO SE HACE DEPLOY EN VIERNES. NUNCA. JAMÁS.",
-    "¿DEPLOY EN VIERNES? Xolito no se hace responsable.",
-    "El on-call ya te odia. Acabas de confirmarlo.",
-    "ALARM: FRIDAY DEPLOY DETECTED. GOD HELP US ALL.",
-    "Viernes + deploy = weekend on-call. Suerte.",
-  ];
+  const day = new Date().getDay();
+  const dayPhrases: Record<number, string[]> = {
+    5: [
+      "NO SE HACE DEPLOY EN VIERNES. NUNCA. JAMÁS.",
+      "¿DEPLOY EN VIERNES? Xolito no se hace responsable.",
+      "El on-call ya te odia. Acabas de confirmarlo.",
+      "ALARM: FRIDAY DEPLOY DETECTED. GOD HELP US ALL.",
+      "Viernes + deploy = weekend on-call. Suerte.",
+    ],
+    6: [
+      "¿DEPLOY EN SÁBADO? ¿En serio, mijo?",
+      "Sábado de deploy. Tu familia no te conoce.",
+      "Deploy en finde. El on-call llora en algún lugar.",
+      "¿No podía esperar al lunes? Pregunta sincera.",
+    ],
+    0: [
+      "DOMINGO de deploy. Xolito reza por ti.",
+      "¿Deploy en domingo? La semana no empezó y ya la regaste.",
+      "Domingo + deploy = lunes muy largo. Math.",
+      "Deploy dominical. Tu terapeuta va a escuchar mucho el lunes.",
+    ],
+  };
+  const phrases = dayPhrases[day] ?? dayPhrases[5];
   const phrase = phrases[Math.floor(Math.random() * phrases.length)];
   vscode.window.showErrorMessage(
     `🔥 Xolito: ${phrase}`,
