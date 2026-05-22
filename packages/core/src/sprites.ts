@@ -90,6 +90,22 @@ export const SPRITES: Record<XolitoMood, string[]> = {
     " ~te_veo~~ ",
   ],
 
+  corrupt: [
+    "  ~(X̷_X̸)~  ",
+    "  /|   |\\  ",
+    "   |ERR|   ",
+    "  /|   |\\  ",
+    " ~CORRUPT~ ",
+  ],
+
+  deploy_friday: [
+    "  ~(💀_💀)~  ",
+    "  /|🔥  |\\  ",
+    "   |FRI|   ",
+    "  /|   |\\  ",
+    " ~DEPLOY~~ ",
+  ],
+
   panic: [
     "  ~(O_O)~  ",
     "  /|💼  |\\  ",

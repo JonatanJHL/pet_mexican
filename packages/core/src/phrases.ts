@@ -431,6 +431,46 @@ export const PHRASES: Record<XolitoEvent, XolitoPhrase[]> = {
   ],
   
   // ── ¡AHÍ VIENE EL PATRÓN! ───────────────────────────────────
+
+  // ── CORRUPCIÓN DEL REPO ──────────────────────────────────────
+  corruption_warning: [
+    { text: "Algo huele raro en este repo...",                mood: 'worried'  },
+    { text: "Los TODOs se acumulan, mijo. Límpialos.",        mood: 'judging'  },
+    { text: "El repo empieza a crujir. Xolito lo siente.",   mood: 'worried'  },
+    { text: "Corrupción detectada. Leve. Por ahora.",        mood: 'sassy'    },
+    { text: "¿Cuándo fue el último commit limpio?",           mood: 'judging'  },
+    { text: "Hay demasiados errores acumulados, mijo.",       mood: 'worried'  },
+  ],
+
+  corruption_critical: [
+    { text: "EL REPO ESTÁ EN PELIGRO.",                       mood: 'mad'      },
+    { text: "Demasiados errores. La corrupción avanza.",      mood: 'mad'      },
+    { text: "El linter ya no puede salvarte.",                mood: 'tired'    },
+    { text: "¿Cuándo compiló esto limpio por última vez?",   mood: 'tired'    },
+    { text: "Xolito está muy preocupado. Muy.",              mood: 'worried'  },
+    { text: "ALERT: repo integrity compromised.",             mood: 'mad'      },
+    { text: "Ese undefined ya tiene conciencia propia.",      mood: 'mad'      },
+  ],
+
+  corruption_cleaned: [
+    { text: "0 corrupción. ¿Quién eres y qué hiciste con mi dev?", mood: 'happy'  },
+    { text: "Repo limpio. Xolito respira de nuevo.",          mood: 'proud'    },
+    { text: "Limpiaste todo. Xolito está orgulloso.",        mood: 'proud'    },
+    { text: "Clean build. Clean repo. Clean conscience.",    mood: 'hyped'    },
+    { text: "Cero corrupción. Esto merece un taquito.",       mood: 'happy'    },
+  ],
+
+  // ── DEPLOY EN VIERNES ────────────────────────────────────────
+  deploy_friday: [
+    { text: "NO SE HACE DEPLOY EN VIERNES. NUNCA.",           mood: 'mad'      },
+    { text: "¿DEPLOY EN VIERNES? Xolito no se responsabiliza.", mood: 'mad'   },
+    { text: "El on-call ya te odia. Lo acabas de confirmar.", mood: 'sassy'   },
+    { text: "ALARM: FRIDAY DEPLOY. GOD HELP US ALL.",         mood: 'mad'      },
+    { text: "Viernes + deploy = weekend on-call. Suerte.",    mood: 'worried'  },
+    { text: "Histórico: 94% de deploys del viernes rompen prod.", mood: 'worried' },
+    { text: "Deploy en viernes. Xolito se persigna.",         mood: 'mad'      },
+  ],
+
   boss_alert: [
     { text: "¡Disimula, disimula! ¡Ponte a leer código denso! 🤫", mood: 'panic' },
     { text: "¡Ahí viene el jefe! Modo ultra-godín activado.", mood: 'panic' },

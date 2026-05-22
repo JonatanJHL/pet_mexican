@@ -24,6 +24,10 @@ export const MOOD_COLORS: Record<XolitoMood, XolitoSpriteColors> = {
   hyped:   { body:'#A8F4C0', belly:'#D0FFE0', gill:'#60E080', tattoo:'#0a2a0a' },
   tired:   { body:'#C8B8B8', belly:'#E8D8D8', gill:'#A89090', tattoo:'#1a1a1a' },
   judging: { body:'#F4A8C0', belly:'#FDDDE6', gill:'#E8729A', tattoo:'#1a1a1a' },
+  // corrupt: rojo oscuro — repo poseído
+  corrupt:        { body:'#C87878', belly:'#F0A0A0', gill:'#A04040', tattoo:'#0a0a0a' },
+  // deploy_friday: naranja alarma — viernes de caos
+  deploy_friday:  { body:'#F4C06A', belly:'#FFDFA0', gill:'#E09030', tattoo:'#1a0a0a' },
   // panic: verde consola apagado — modo godín activado
   panic:   { body:'#B8C8A8', belly:'#D8E8C8', gill:'#88A868', tattoo:'#0a1a0a' },
 };
@@ -41,6 +45,8 @@ export const MOOD_EXPR: Record<XolitoMood, MouthExpr> = {
   hyped:   'bigsmile',
   tired:   'tired',
   judging: 'judging',
+  corrupt:        'frown',
+  deploy_friday:  'worried',
   panic:   'worried',
 };
 
@@ -218,7 +224,7 @@ export function generateSpriteSVG(mood: XolitoMood, size = 120): string {
 export function getAllSprites(size = 120): Record<XolitoMood, string> {
   const moods: XolitoMood[] = [
     'idle','happy','mad','sleepy','sassy',
-    'proud','worried','hyped','tired','judging','panic',
+    'proud','worried','hyped','tired','judging','panic','corrupt','deploy_friday',
   ];
   return Object.fromEntries(
     moods.map(m => [m, generateSpriteSVG(m, size)])
