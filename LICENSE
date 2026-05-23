@@ -1,21 +1,83 @@
-MIT License
+XOLITO DUAL LICENSE
+===================
 
-Copyright (c) 2026 JonatanJHL
+Copyright (c) 2024 Jonatan Joaquín Hidalgo Ledesma
+All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software and associated documentation files (the "Software") are
+dual-licensed under the following terms:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART I — NON-COMMERCIAL LICENSE (Free)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this Software, to use, copy, modify, merge, and distribute
+the Software, subject to the following conditions:
+
+1. NON-COMMERCIAL USE ONLY
+   This license applies exclusively to personal, educational, research,
+   and open-source non-commercial use. You may NOT use the Software,
+   in whole or in part, in any product, service, or activity that
+   generates revenue, is sold, or is offered commercially without
+   obtaining a Commercial License (Part II).
+
+2. ATTRIBUTION
+   All copies or substantial portions of the Software must include:
+   - This license notice
+   - The following attribution:
+     "Xolito by Jonatan Joaquín Hidalgo Ledesma
+      github.com/JonatanJHL/pet_mexican"
+
+3. DERIVATIVE WORKS
+   Derivative works for non-commercial purposes are permitted provided
+   they are distributed under this same license and clearly state
+   the changes made.
+
+4. NO WARRANTIES
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+   IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR
+   OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART II — COMMERCIAL LICENSE (Requires Agreement)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Any use of the Software for commercial purposes — including but not
+limited to:
+
+  - Incorporating Xolito into a physical product for sale
+  - Offering Xolito as part of a paid service or SaaS
+  - Distributing the Software bundled with a commercial product
+  - Using the Xolito name, brand, or character in commercial contexts
+  - Hardware devices (IoT, embedded systems, gadgets) that use or
+    are marketed using the Xolito software, name, or likeness
+
+requires a separate Commercial License Agreement with the author.
+
+COMMERCIAL LICENSE TERMS (summary):
+  - A royalty fee applies to commercial use, to be negotiated with
+    the author prior to any commercial distribution or sale.
+  - The author retains all intellectual property rights to the
+    Xolito name, character design, and core software.
+  - Sublicensing and white-labeling require explicit written consent.
+
+TO OBTAIN A COMMERCIAL LICENSE:
+  Contact: jonatanhidalgoledesma@gmail.com
+  Subject: "Xolito Commercial License Request"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TRADEMARK NOTICE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Xolito" and the Xolito axolotl character design are the intellectual
+property of Jonatan Joaquín Hidalgo Ledesma. Use of the name "Xolito"
+or the character design in any commercial context without a Commercial
+License Agreement is strictly prohibited.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For questions about this license:
+  Jonatan Joaquín Hidalgo Ledesma
+  jonatanhidalgoledesma@gmail.com
+  https://github.com/JonatanJHL/pet_mexican
