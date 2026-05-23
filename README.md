@@ -10,7 +10,7 @@
 Regañón. Tierno. Sarcástico. 100% mexicano. 0% filtro.
 
 ![CI](https://github.com/JonatanJHL/pet_mexican/actions/workflows/ci.yml/badge.svg)
-![License](https://img.shields.io/badge/license-MIT-pink)
+![License](https://img.shields.io/badge/license-Dual%20License-orange)
 ![Made in Mexico](https://img.shields.io/badge/Hecho%20en-México%20🇲🇽-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
 ![Version](https://img.shields.io/visual-studio-marketplace/v/xolito.xolito-vscode?label=Marketplace)
@@ -167,8 +167,12 @@ pnpm test:coverage  # con cobertura
 
 ## 📄 Licencia
 
-MIT — Úsalo, modifícalo, ponle más frases.  
-Xolito es de todos. Como el aguacate. 🥑
+Xolito usa una **licencia dual**.
+
+Uso personal, educativo y open source → libre y gratuito.  
+Uso comercial (productos, servicios, hardware, SaaS) → requiere acuerdo con el autor.
+
+📩 jonatanhidalgoledesma@gmail.com
 
 ---
 
