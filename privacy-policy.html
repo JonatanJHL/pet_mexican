@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidad - Xolito</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #fafafa;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        h1 {
+            color: #d81b60;
+            border-bottom: 2px solid #f8bbd0;
+            padding-bottom: 10px;
+            font-size: 28px;
+        }
+        h2 {
+            color: #491224;
+            font-size: 20px;
+            margin-top: 30px;
+        }
+        p, li {
+            font-size: 15px;
+            color: #555;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: #888;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .highlight {
+            background-color: #fff9db;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Política de Privacidad de Xolito</h1>
+        <p><strong>Última actualización:</strong> 25 de mayo de 2026</p>
+        
+        <p>En <strong>Xolito</strong> (desarrollada por JonatanJHL / Angriff Lab), nos tomamos muy en serio tu privacidad. Esta Política de Privacidad describe cómo recopilamos, utilizamos y compartimos tu información cuando utilizas nuestra aplicación móvil.</p>
+
+        <h2>1. Información que Recopilamos y Procesamos</h2>
+        <p>Para ofrecer la experiencia de simulación y automatización de respuestas, Xolito interactúa con los siguientes permisos y datos:</p>
+        <ul>
+            <li><strong>Acceso a Notificaciones (NotificationListenerService):</strong> Xolito requiere permiso de lectura de notificaciones únicamente para detectar mensajes entrantes de aplicaciones de mensajería compatibles (como WhatsApp). Este procesamiento ocurre <strong>localmente en tu dispositivo</strong>.</li>
+            <li><strong>Contenido de los Mensajes:</strong> El texto del mensaje entrante se procesa temporalmente en la memoria del dispositivo para evaluar si coincide con alguna regla de respuesta automática fuera de línea (Offline Fallbacks) o si requiere una respuesta generada por Inteligencia Artificial.</li>
+            <li><strong>Roles Personalizados y Comunidad:</strong> Si decides utilizar la pestaña "Comunidad" e importar o subir un rol personalizado a la nube (soportado por Supabase), el nombre del rol y el prompt asociado se almacenan en nuestra base de datos pública en la nube para que otros usuarios puedan descargarlo. No recopilamos información personal del creador del rol.</li>
+        </ul>
+
+        <h2>2. Uso de la Inteligencia Artificial (Servicios de Terceros)</h2>
+        <p>Si activas la función de <strong>Respuestas Inteligentes de IA</strong>, Xolito enviará el contenido del mensaje recibido a través de una conexión segura cifrada (HTTPS) a la API de **OpenRouter** / **Google Gemini** para generar la réplica humorística o sarcástica seleccionada.</p>
+        <p><span class="highlight">Importante:</span> No enviamos identificadores personales, nombres reales, ni números de teléfono a la API de Inteligencia Artificial. Los mensajes se envían de forma anónima y no se almacenan de forma permanente en servidores externos.</p>
+
+        <h2>3. Almacenamiento de Datos</h2>
+        <p>Todos tus contactos configurados, roles personalizados locales y configuraciones de la mascota flotante se almacenan localmente en tu dispositivo mediante <strong>SharedPreferences</strong>. Esta información no se comparte ni se vende a anunciantes ni a terceras partes.</p>
+
+        <h2>4. Seguridad de los Datos</h2>
+        <p>Implementamos medidas de seguridad estándar de la industria para proteger el procesamiento temporal de tus datos. El envío de información a la nube se realiza exclusivamente mediante protocolos seguros cifrados (HTTPS).</p>
+
+        <h2>5. Cambios en esta Política de Privacidad</h2>
+        <p>Es posible que actualicemos nuestra Política de Privacidad periódicamente. Te recomendamos revisar esta página de vez en cuando para informarte sobre cualquier cambio. Las modificaciones entrarán en vigencia inmediatamente después de su publicación en esta página.</p>
+
+        <h2>6. Contacto</h2>
+        <p>Si tienes alguna pregunta o sugerencia sobre nuestra Política de Privacidad, no dudes en ponerte en contacto con nosotros a través de:</p>
+        <p>Email: <strong>jonatanjhl.dev@gmail.com</strong></p>
+
+        <div class="footer">
+            <p>&copy; 2026 Xolito App. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>
