@@ -8,3 +8,10 @@ dist/
 *.vsix
 pnpm-lock.yaml
 xolito-health.json
+**/xolito-health.json
+xolito.jks
+*.jks
+
+# Android — no subir
+packages/android/
+new_assets/

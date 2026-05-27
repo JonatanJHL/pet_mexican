@@ -1,6 +1,6 @@
 // ============================================================
 //  xolito/packages/vscode/src/corruption-watcher.ts
-//  v2 — usa diagnósticos LSP reales + JSON local de historial
+//  v3 — solo archivos del workspace, lista de archivos corruptos
 // ============================================================
 
 import * as vscode from 'vscode';
@@ -9,7 +9,6 @@ import * as path from 'path';
 import { calculateCorruption } from '@xolito/core';
 import type { CorruptionState, CorruptionFactors } from '@xolito/core';
 
-// ── Estructura del JSON local ─────────────────────────────────
 interface HealthSnapshot {
   timestamp:        string;
   errorCount:       number;
@@ -20,30 +19,35 @@ interface HealthSnapshot {
 }
 
 interface HealthHistory {
-  snapshots:        HealthSnapshot[];
-  lastUpdated:      string;
+  snapshots:    HealthSnapshot[];
+  lastUpdated:  string;
+}
+
+export interface FileWithErrors {
+  name:     string;
+  errors:   number;
+  warnings: number;
 }
 
 export class CorruptionWatcher {
-  private disposables:      vscode.Disposable[] = [];
-  private onChange:         (state: CorruptionState) => void;
-  private errorCount        = 0;
-  private warningCount      = 0;
-  private consecutiveFails  = 0;
-  private lastCommitTime    = Date.now();
-  private scanTimer:          NodeJS.Timeout | undefined;
-  private saveTimer:          NodeJS.Timeout | undefined;
-  private healthFile:         string | undefined;
+  private disposables:     vscode.Disposable[] = [];
+  private onChange:        (state: CorruptionState) => void;
+  private errorCount       = 0;
+  private warningCount     = 0;
+  private consecutiveFails = 0;
+  private lastCommitTime   = Date.now();
+  private scanTimer:         NodeJS.Timeout | undefined;
+  private saveTimer:         NodeJS.Timeout | undefined;
+  private healthFile:        string | undefined;
+  private filesWithErrors:   FileWithErrors[] = [];
 
   constructor(onChange: (state: CorruptionState) => void) {
     this.onChange = onChange;
-    // Ruta del JSON en la raíz del workspace
     const ws = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (ws) this.healthFile = path.join(ws, 'xolito-health.json');
   }
 
   start(): void {
-    // ── Escucha diagnósticos LSP en tiempo real ───────────────
     this.disposables.push(
       vscode.languages.onDidChangeDiagnostics(() => {
         this.updateFromDiagnostics();
@@ -53,12 +57,15 @@ export class CorruptionWatcher {
         this.updateFromDiagnostics();
         this.recalculate();
       }),
+      // Recalcula cuando se cierra un documento
+      vscode.workspace.onDidCloseTextDocument(() => {
+        this.updateFromDiagnostics();
+        this.recalculate();
+      }),
     );
 
     this.updateFromDiagnostics();
     this.recalculate();
-
-    // Recalcula cada 3 minutos para actualizar hoursWithoutCommit
     this.scanTimer = setInterval(() => this.recalculate(), 3 * 60 * 1000);
   }
 
@@ -75,7 +82,7 @@ export class CorruptionWatcher {
 
   getCurrentFactors(): CorruptionFactors {
     return {
-      todoCount:          0, // ya no usamos TODOs — usamos errores reales
+      todoCount:          0,
       errorCount:         this.errorCount,
       deadFileCount:      0,
       consecutiveFails:   this.consecutiveFails,
@@ -85,36 +92,55 @@ export class CorruptionWatcher {
     };
   }
 
-  getWarningCount(): number { return this.warningCount; }
+  getWarningCount():    number           { return this.warningCount; }
+  getFilesWithErrors(): FileWithErrors[] { return this.filesWithErrors; }
 
-  // ── Lee diagnósticos LSP de TODOS los archivos abiertos ──────
+  // ── Solo cuenta archivos dentro del workspace activo ─────────
   private updateFromDiagnostics(): void {
+    const wsPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     let errors   = 0;
     let warnings = 0;
+    const fileMap = new Map<string, FileWithErrors>();
 
-    // Obtiene diagnósticos de todos los documentos del workspace
     const allDiags = vscode.languages.getDiagnostics();
-    for (const [, diags] of allDiags) {
+    for (const [uri, diags] of allDiags) {
+      const filePath = uri.fsPath;
+
+      // Solo archivos dentro del workspace — ignora archivos externos/temporales
+      if (wsPath && !filePath.startsWith(wsPath)) continue;
+
+      let fileErrors   = 0;
+      let fileWarnings = 0;
+
       for (const d of diags) {
-        if (d.severity === vscode.DiagnosticSeverity.Error)   errors++;
-        if (d.severity === vscode.DiagnosticSeverity.Warning) warnings++;
+        if (d.severity === vscode.DiagnosticSeverity.Error)   { errors++;   fileErrors++;   }
+        if (d.severity === vscode.DiagnosticSeverity.Warning) { warnings++; fileWarnings++; }
+      }
+
+      if (fileErrors > 0 || fileWarnings > 0) {
+        fileMap.set(filePath, {
+          name:     path.relative(wsPath ?? '', filePath),
+          errors:   fileErrors,
+          warnings: fileWarnings,
+        });
       }
     }
 
-    this.errorCount   = errors;
-    this.warningCount = warnings;
+    this.errorCount      = errors;
+    this.warningCount    = warnings;
+    // Ordena por errores descendente, máximo 5 archivos
+    this.filesWithErrors = Array.from(fileMap.values())
+      .sort((a, b) => b.errors - a.errors)
+      .slice(0, 5);
   }
 
-  // ── Recalcula y guarda en JSON ────────────────────────────────
   private recalculate(): void {
     const state = calculateCorruption(this.getCurrentFactors());
     this.onChange(state);
-    // Guarda con debounce de 2s para no escribir en cada keystroke
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => this.saveSnapshot(state), 2000);
   }
 
-  // ── Escribe xolito-health.json en la raíz del workspace ──────
   private saveSnapshot(state: CorruptionState): void {
     if (!this.healthFile) return;
     try {
@@ -122,7 +148,6 @@ export class CorruptionWatcher {
       if (fs.existsSync(this.healthFile)) {
         history = JSON.parse(fs.readFileSync(this.healthFile, 'utf8'));
       }
-
       const snapshot: HealthSnapshot = {
         timestamp:        new Date().toISOString(),
         errorCount:       this.errorCount,
@@ -131,15 +156,10 @@ export class CorruptionWatcher {
         corruptionLevel:  state.level,
         corruptionTier:   state.tier,
       };
-
-      // Mantiene solo los últimos 50 snapshots
       history.snapshots.push(snapshot);
       if (history.snapshots.length > 50) history.snapshots.shift();
       history.lastUpdated = snapshot.timestamp;
-
       fs.writeFileSync(this.healthFile, JSON.stringify(history, null, 2));
-    } catch (_) {
-      // Silencioso — no interrumpir flujo si el archivo está bloqueado
-    }
+    } catch (_) {}
   }
 }

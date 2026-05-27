@@ -6,7 +6,7 @@
 
 > *"Aquí estoy, cuidándote... y juzgándote con cariño."*
 
-**Tu ajolote regañón para VS Code y la terminal.**  
+**Tu ajolote regañón para VS Code.**  
 Regañón. Tierno. Sarcástico. 100% mexicano. 0% filtro.
 
 ![CI](https://github.com/JonatanJHL/pet_mexican/actions/workflows/ci.yml/badge.svg)
@@ -23,7 +23,7 @@ Regañón. Tierno. Sarcástico. 100% mexicano. 0% filtro.
 
 Xolito es una mascota virtual inspirada en el **ajolote mexicano** (*Ambystoma mexicanum*) — la especie endémica de México que nunca termina de madurar. Igual que nuestro código.
 
-Vive en tu VS Code, detecta errores en tiempo real via LSP, y te regaña con cariño en español mexicano.
+Vive en tu VS Code, detecta errores en tiempo real via LSP y te regaña con cariño en español mexicano.
 
 ---
 
@@ -34,6 +34,7 @@ Vive en tu VS Code, detecta errores en tiempo real via LSP, y te regaña con car
 | | | | | | |
 |:---:|:---:|:---:|:---:|:---:|:---:|
 | <img src="packages/vscode/assets/xolito_idle.png" width="72"/><br>**idle** | <img src="packages/vscode/assets/xolito_happy.png" width="72"/><br>**happy** | <img src="packages/vscode/assets/xolito_mad.png" width="72"/><br>**mad** | <img src="packages/vscode/assets/xolito_sassy.png" width="72"/><br>**sassy** | <img src="packages/vscode/assets/xolito_worried.png" width="72"/><br>**worried** | <img src="packages/vscode/assets/xolito_panic.png" width="72"/><br>**panic** |
+| <img src="packages/vscode/assets/xolito_corrupt.png" width="72"/><br>**corrupt** | | | | | |
 
 </div>
 
@@ -42,30 +43,107 @@ Vive en tu VS Code, detecta errores en tiempo real via LSP, y te regaña con car
 ## ✨ Features
 
 - 🔴 **Detecta errores LSP en tiempo real** — TypeScript, PHP, Python, Go, Rust, C#, Java
-- 💬 **Comentarios inline con rotación** — frases distintas para cada tipo de error, sin repetirse
-- 🧠 **Memoria entre archivos** — Xolito recuerda si en el archivo anterior también la regaste
-- 🎨 **11 sprites por mood** — incluyendo `panic` con corbata para el jefe
-- 📊 **Panel de stats de sesión** — errores, warnings, builds, archivos, tiempo y nivel de estrés
+- 🧠 **Traductor de Barrio** — traduce errores técnicos a español mexicano con hover
+- 💬 **Comentarios inline con rotación** — frases distintas por tipo de error, sin repetirse
+- 🏆 **Sistema de Logros** — 7 badges desbloqueables por tus hábitos reales de código
+- 🔮 **Exorcismo** — ritual animado para limpiar la corrupción del repo
+- 🎨 **13 sprites por mood** — incluyendo `panic`, `corrupt` y `deploy_friday`
+- 📊 **Panel con stats de sesión** — errores, warnings, builds, archivos, tiempo y estrés
+- 💀 **Sistema de Corrupción** — el repo acumula corrupción según errores LSP y builds fallidos
+- 🔥 **Deploy Suicida** — detecta deploys en viernes/sábado/domingo y activa la alarma
 - 💼 **Modo Patrón** (`Shift+Esc`) — camufla tu pantalla cuando llega el jefe
-- 🌶️ **Linter de Chambazos** — detecta spanglish en nombres de variables (`fetchUsuarios`, `get_datos`)
+- 🌶️ **Linter de Chambazos** — detecta spanglish en nombres (`fetchUsuarios`, `get_datos`)
 - 📈 **Sistema de estrés** — 5+ errores seguidos escalan el sarcasmo automáticamente
-- 🕐 **Contexto dinámico** — viernes 4pm y fines de semana activan frases de descanso
+- 🕐 **Contexto dinámico** — viernes 4pm y fines de semana activan frases especiales
 - 🌙 **Eventos especiales** — coding nocturno, push a main, force push, merge conflicts
-- 🔇 **Toggle silencio** — se calla cuando lo necesitas
 - 🇲🇽 **100% mexicano** — frases en español con spanglish natural
 
 ---
 
-## 💼 Modo Patrón
+## 🧠 Traductor de Barrio
 
-`Shift+Esc` cuando se acerque el jefe:
+Xolito traduce los errores del compilador a español mexicano. Aparece al hacer hover sobre el error:
 
 ```
-Antes:  trabajando en mi_proyecto_secreto.ts
+Error: Type 'number' is not assignable to type 'string'
+🦎 "Estás intentando meter una caguama en un vaso tequilero. No va a caber, mijo."
+
+Error: Cannot find name 'fetchUsuarios'
+🦎 "¿Y esa variable de dónde salió? Es como buscar al taquero un lunes: no existe."
+
+Error: Object is possibly 'null'
+🦎 "Eso podría venir más vacío que tu cartera en fin de quincena."
+```
+
+---
+
+## 🏆 Sistema de Logros
+
+7 badges desbloqueables según tus hábitos reales:
+
+| Badge | Emoji | Cómo ganarlo |
+|-------|-------|-------------|
+| La Noche es Joven | 🦉 | Programar entre 3am y 5am |
+| Junior de Corazón | 👶 | Acumular 10+ errores simultáneos |
+| Héroe Nacional | ⚔️ | Resolver un merge conflict |
+| Viernes de Peligro | 🌶️ | Compilar un viernes después de las 3pm |
+| ¿Qué es un Commit? | 💾 | Guardar 50 veces sin hacer commit |
+| El Limpiador | 🧹 | Borrar 100+ líneas de un golpe |
+| El Terco | 🐂 | Guardar el mismo archivo roto 5 veces seguidas |
+
+---
+
+## 💀 Sistema de Corrupción
+
+Xolito monitorea el estado real de tu workspace usando diagnósticos LSP:
+
+| Nivel | Tier | Efecto |
+|-------|------|--------|
+| 0–19% | ✓ Limpio | Todo normal |
+| 20–49% | 🟡 Advertencia | Barra amarilla |
+| 50–79% | ⚠️ Crítico | Barra roja, archivos culpables visibles |
+| 80–100% | 👹 Poseído | Glitch, ojos rojos, panel tiembla |
+
+El panel muestra los **archivos responsables** con su conteo de errores. Al corregirlos la barra baja automáticamente. El historial se guarda en `xolito-health.json` en la raíz del proyecto.
+
+Para un reset rápido: `Cmd+Shift+P` → **Exorcismo 🔮**
+
+---
+
+## 🔮 Exorcismo
+
+Cuando el repo está poseído, aparece el botón **🔮 REALIZAR EXORCISMO** en el panel.
+
+El ritual incluye:
+- Defumación con copal digital 🌿
+- Agua bendita al `package.json` 💧
+- 3 Padre Nuestros al servidor de producción 💻
+- Emojis flotando en la pantalla ✨
+
+---
+
+## 🔥 Deploy Suicida
+
+Detecta deploys en **viernes, sábado y domingo** con frases específicas por día:
+
+```
+Viernes: "NO SE HACE DEPLOY EN VIERNES. NUNCA. JAMÁS."
+Sábado:  "¿DEPLOY EN SÁBADO? ¿En serio, mijo?"
+Domingo: "DOMINGO de deploy. Xolito reza por ti."
+```
+
+Modal de emergencia: **"Cancelar deploy"** / **"Vivir peligroso"**.
+
+---
+
+## 💼 Modo Patrón — `Shift+Esc`
+
+```
+Antes:   🦎 Compiló limpio. Tu mamá estaría orgullosa.
 Después: 💼 [PROD] cluster_matrix_balancer.cpp
 ```
 
-Abre código C++ con templates avanzados, mutex y futuros. Al desactivar, regresa exactamente donde estabas.
+Abre C++ con templates, mutex y operaciones atómicas. `Shift+Esc` de nuevo regresa exactamente donde estabas.
 
 ---
 
@@ -81,11 +159,10 @@ ext install xolito.xolito-vscode
 
 ```bash
 git clone https://github.com/JonatanJHL/pet_mexican.git xolito
-cd xolito
-pnpm install
+cd xolito && pnpm install
 cd packages/core && pnpm exec tsc
 cd ../vscode && node build.mjs
-# Presiona F5 en VS Code
+# F5 en VS Code para lanzar
 ```
 
 ---
@@ -93,25 +170,27 @@ cd ../vscode && node build.mjs
 ## 💬 Frases de ejemplo
 
 ```
-💼 Modo Patrón activado:
-  "¡Disimula, disimula! ¡Ponte a leer código denso!"
-  "¡No voltees! Mirada fija como hacker ruso."
+🧠 Traductor de barrio (hover sobre error):
+  "Le estás pidiendo limones al árbol de aguacates."
 
-🌶️ Linter spanglish:
-  "fetchUsuarios. Mijo, consistencia. Elige un idioma."
+👹 Repo poseído:
+  "X̷o̸l̴i̷t̸o̵ ̵e̸s̷t̴á̷ ̵a̶q̵u̵í̸..."
+  "ALIMENTASTE DEMASIADOS BUGS."
+
+🔥 Deploy en viernes:
+  "Histórico: 94% de los deploys del viernes rompen prod."
+
+💼 Modo Patrón:
+  "¡Disimula! ¡Ponte a leer código denso!"
+
+🌶️ Spanglish detectado:
+  "fetchUsuarios. Mijo, elige un idioma."
 
 😤 5+ errores seguidos:
   "El compilador te odia hoy. Respira."
-  "Párate, respira, lee el error completo. En serio."
 
 🍺 Viernes 4pm:
   "Viernes 4pm. Cierra el IDE y agarra una chela."
-
-🔴 Error en otro archivo:
-  "¿Vienes huyendo del otro archivo? Aquí también hay errores."
-
-💀 Push a main:
-  "¡Ay, cabrón! ¿Y el PR? ¿Lo dejaste en el carro?"
 
 🌙 Coding nocturno:
   "Son las 11pm y sigues aquí. Tu cama también te quiere."
@@ -124,19 +203,19 @@ cd ../vscode && node build.mjs
 ```
 xolito/
 ├── packages/
-│   ├── core/              ← lógica central, frases, sprites SVG
+│   ├── core/
 │   │   └── src/
-│   │       ├── phrases.ts         ← banco de frases por evento
-│   │       ├── xolito.ts          ← clase principal + sistema de estrés
-│   │       ├── types.ts           ← tipos y moods (incluye panic)
-│   │       └── sprites/
-│   │           └── generator.ts   ← generador SVG por mood
-│   ├── vscode/            ← extensión VS Code
+│   │       ├── phrases.ts           ← banco de frases por evento
+│   │       ├── corruption.ts        ← sistema de corrupción
+│   │       ├── types.ts             ← 13 moods y eventos
+│   │       └── sprites/generator.ts ← generador SVG por mood
+│   ├── vscode/
+│   │   ├── assets/                  ← sprites PNG por mood
 │   │   └── src/
-│   │       ├── extension.ts       ← boss mode, linter spanglish, contexto dinámico
-│   │       ├── decorations.ts     ← frases inline con rotación y memoria
-│   │       └── diagnostics-watcher.ts
-│   └── claude-code/       ← plugin de terminal
+│   │       ├── extension.ts         ← core, logros, exorcismo, deploy suicida
+│   │       ├── corruption-watcher.ts← monitor LSP + health.json
+│   │       └── decorations.ts       ← inline + traductor de barrio
+│   └── claude-code/                 ← plugin de terminal (WIP)
 └── README.md
 ```
 
@@ -144,33 +223,27 @@ xolito/
 
 ## 🤝 Contribuir frases
 
-Las frases viven en dos archivos:
+- **`packages/core/src/phrases.ts`** — notificaciones y panel
+- **`packages/vscode/src/decorations.ts`** — inline + traductor de barrio
 
-- **`packages/core/src/phrases.ts`** — notificaciones y panel (eventos como `build_fail`, `boss_alert`)
-- **`packages/vscode/src/decorations.ts`** — comentarios inline en el editor
-
-Ver la [guía completa de contribución](packages/vscode/README.md) con ejemplos, reglas de tono y tabla de eventos.
-
-**Reglas básicas:**
-1. Regañonas pero con cariño — las mamadas son de carnal, no de enemigo
-2. Sarcasmo natural — que suene a cuate, no a IA
-3. Español mexicano o spanglish — mezcla si se siente natural
-4. Máximo 100 caracteres
-5. Asigna el mood correcto
+**Reglas:** máx 100 chars · sarcasmo con cariño · español mexicano · mood correcto
 
 ```bash
-pnpm test           # 52+ tests
+pnpm test           # 52 tests
 pnpm test:coverage  # con cobertura
 ```
 
 ---
 
+## 📱 También en Android
+
+Próximamente en Google Play — Xolito reacciona a tus notificaciones de WhatsApp. 7 personalidades y respuestas automáticas con IA.
+
+---
+
 ## 📄 Licencia
 
-Xolito usa una **licencia dual**.
-
-Uso personal, educativo y open source → libre y gratuito.  
-Uso comercial (productos, servicios, hardware, SaaS) → requiere acuerdo con el autor.
+Licencia dual — uso personal libre, uso comercial requiere acuerdo.
 
 📩 jonatanhidalgoledesma@gmail.com
 

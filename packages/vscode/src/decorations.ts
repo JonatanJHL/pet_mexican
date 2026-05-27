@@ -136,11 +136,22 @@ export class XolitoDecorations {
       if (diag.severity === vscode.DiagnosticSeverity.Error) {
         if (errorLines.has(lineNum)) continue;
         errorLines.add(lineNum);
+        
+        const translation = this.getBarrioTranslation(diag.message);
+        const hoverMsg = translation 
+          ? new vscode.MarkdownString(`**🦎 Xolito traductor de barrio:**\n\n_${translation}_`)
+          : new vscode.MarkdownString(`**🦎 Xolito:**\n\n_${diag.message}_`);
+
+        const inlineText = translation
+          ? `  🦎🧠 Barrio: ${translation.length > 40 ? translation.slice(0, 37) + '...' : translation}`
+          : `  🦎💢 ${this.errorPhrase(diag.message, lang, cameFromBrokenFile)}`;
+
         errorRanges.push({
           range: new vscode.Range(diag.range.start, diag.range.end),
+          hoverMessage: hoverMsg,
           renderOptions: {
             after: {
-              contentText: `  🦎💢 ${this.errorPhrase(diag.message, lang, cameFromBrokenFile)}`,
+              contentText: inlineText,
             },
           },
         });
@@ -400,5 +411,31 @@ export class XolitoDecorations {
     };
     const options = phrases[lang] ?? phrases['default'];
     return options[Math.floor(Math.random() * options.length)];
+  }
+
+  private getBarrioTranslation(msg: string): string | null {
+    const m = msg.toLowerCase();
+    if (m.includes('not assignable to type')) {
+      return "Básicamente estás intentando meter una caguama familiar en un vaso tequilero. No va a caber, mijo. Cambia el tipo.";
+    }
+    if (m.includes('cannot find name')) {
+      return "¿Y esa variable de dónde salió, mijo? Es como buscar al taquero un lunes por la mañana: no existe. Declárala o impórtala primero.";
+    }
+    if (m.includes('does not exist on type')) {
+      return "Le estás pidiendo limones al árbol de aguacates. Ese objeto no tiene esa propiedad, no te pases de listo.";
+    }
+    if (m.includes('possibly \'null\'') || m.includes('possibly \'undefined\'') || m.includes('possibly null') || m.includes('possibly undefined')) {
+      return "Eso podría venir más vacío que tu cartera en fin de quincena. Agrégale un '?' para protegerlo o valídalo antes.";
+    }
+    if (m.includes('unexpected token') || m.includes('syntaxerror') || m.includes('syntax error')) {
+      return "Te comiste un punto y coma o cerraste mal una llave. Revisa lento, no lleves prisa.";
+    }
+    if (m.includes('is not defined') || m.includes('is not assignable')) {
+      return "Buscaste a alguien que no vive aquí. Esa variable no está declarada o no es compatible.";
+    }
+    if (m.includes('out of range') || m.includes('indexoutofbounds') || m.includes('out of bounds')) {
+      return "Te saliste de la fila de las tortillas. El índice que buscas está fuera del tamaño de la lista.";
+    }
+    return null;
   }
 }

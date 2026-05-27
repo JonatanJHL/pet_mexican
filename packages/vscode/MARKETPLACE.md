@@ -12,121 +12,169 @@ Porque escribir código sin que alguien te diga que la regaste… no tiene graci
 ![Made in Mexico](https://img.shields.io/badge/Hecho%20en-México%20🇲🇽-006847?style=flat)
 ![Version](https://img.shields.io/visual-studio-marketplace/v/xolito.xolito-vscode?style=flat&color=ce1126)
 ![Installs](https://img.shields.io/visual-studio-marketplace/i/xolito.xolito-vscode?style=flat&color=006847)
-![License](https://img.shields.io/badge/license-MIT-pink?style=flat)
+![License](https://img.shields.io/badge/license-Dual-orange?style=flat)
 
 </div>
-
----
-
-## ¿Qué es Xolito?
-
-Xolito es una mascota virtual inspirada en el **ajolote mexicano** — la especie endémica de México que nunca termina de madurar. Igual que nuestro código.
-
-Vive en tu barra lateral, vigila tu editor en tiempo real y te comenta cada error, warning y `console.log` olvidado con la energía de un tío regañón que en el fondo te quiere mucho.
 
 ---
 
 ## ✨ ¿Qué hace?
 
 - 🔴 **Detecta errores LSP en tiempo real** — TypeScript, PHP, Python, Go, Rust, C#, Java y más
-- 💬 **Comentarios inline junto a tus errores** — aparece exactamente donde la regaste
-- 🎨 **11 expresiones animadas** — idle, happy, mad, sassy, worried, proud, hyped, tired, judging, sleepy y **panic**
-- 📊 **Panel de stats de sesión** — errores, warnings, builds, archivos tocados, tiempo y nivel de estrés
-- 💼 **Modo Patrón** (`Shift+Esc`) — camufla tu pantalla cuando se acerca el jefe
-- 🌶️ **Linter de Chambazos** — detecta código en spanglish (`fetchUsuarios`, `get_datos`) y te lo dice
-- 📈 **Sistema de estrés** — si acumulas 5+ errores seguidos, Xolito escala su nivel de sarcasmo
-- 🕐 **Contexto dinámico** — viernes después de las 4pm y fines de semana activan frases especiales
+- 🧠 **Traductor de Barrio** — traduce errores técnicos a español mexicano con hover
+- 💬 **Comentarios inline con rotación** — frases distintas por tipo de error, sin repetirse
+- 🏆 **Sistema de Logros** — 7 badges desbloqueables por tus hábitos de código
+- 🔮 **Exorcismo** — limpia la corrupción del repo con un comando
+- 🎨 **13 expresiones animadas** — incluyendo `panic`, `corrupt` y `deploy_friday`
+- 📊 **Panel con stats de sesión** — errores, warnings, builds, archivos, tiempo y nivel de estrés
+- 💀 **Sistema de Corrupción** — el repo acumula corrupción según errores y builds fallidos
+- 🔥 **Deploy Suicida** — detecta deploys en viernes/sábado/domingo y activa la alarma
+- 💼 **Modo Patrón** (`Shift+Esc`) — camufla tu pantalla cuando llega el jefe
+- 🌶️ **Linter de Chambazos** — detecta spanglish en nombres (`fetchUsuarios`, `get_datos`)
+- 📈 **Sistema de estrés** — 5+ errores seguidos escalan el sarcasmo automáticamente
+- 🕐 **Contexto dinámico** — viernes 4pm y fines de semana activan frases de descanso
 - 🌙 **Eventos especiales** — coding nocturno, push a main, force push, merge conflicts
-- 🔇 **Toggle on/off** — siléncialo cuando necesites concentrarte (sin drama)
 - 🇲🇽 **100% en español mexicano** — con spanglish natural, sin filtros
 
 ---
 
-## 💼 Modo Patrón — Boss Mode
+## 🧠 Traductor de Barrio
 
-Presiona `Shift+Esc` cuando se acerque tu jefe:
+Xolito traduce los errores técnicos del compilador a español mexicano. Aparece al hacer hover sobre el error:
 
-- La status bar se camufla: `💼 [PROD] cluster_matrix_balancer.cpp`
-- Se abre automáticamente código C++ ultra-complejo con templates, mutex y futuros
-- Xolito se pone serio con corbata y cara de pánico profesional
-- Al presionar `Shift+Esc` de nuevo: cierra el archivo dummy y regresa exactamente donde estabas
+```
+Error original:
+  Type 'number' is not assignable to type 'string'
+
+🦎 Xolito traduce:
+  "Estás intentando meter una caguama familiar en un vaso
+   tequilero. No va a caber, mijo. Cambia el tipo."
+```
+
+```
+Error original:
+  Cannot find name 'fetchUsuarios'
+
+🦎 Xolito traduce:
+  "¿Y esa variable de dónde salió? Es como buscar al taquero
+   un lunes por la mañana: no existe. Declárala primero."
+```
 
 ---
 
-## 💬 Ejemplos de lo que te dice
+## 🏆 Sistema de Logros
+
+Xolito desbloquea badges según tus hábitos reales de código:
+
+| Badge | Emoji | Cómo ganarlo |
+|-------|-------|-------------|
+| La Noche es Joven | 🦉 | Programar entre 3am y 5am |
+| Junior de Corazón | 👶 | Acumular 10+ errores simultáneos |
+| Héroe Nacional | ⚔️ | Resolver un merge conflict |
+| Viernes de Peligro | 🌶️ | Compilar un viernes después de las 3pm |
+| ¿Qué es un Commit? | 💾 | Guardar 50 veces sin hacer commit |
+| El Limpiador | 🧹 | Borrar 100+ líneas de un golpe |
+| El Terco | 🐂 | Guardar el mismo archivo roto 5 veces seguidas |
+
+---
+
+## 🔮 Exorcismo
+
+Cuando el repo está poseído y necesitas un respiro:
 
 ```
-🔴 Al detectar un error:
-  "Ay, mijo... otra vez. ¿No que muy bueno?"
-  "¿recuerdas que en el otro archivo también la regaste?"
-  "Failed. Así como tu dieta de enero, pero en código."
+Cmd+Shift+P → "Xolito: Realizar Exorcismo Rápido 🔮"
+```
 
-✅ Al compilar limpio:
-  "Órale, compiló. No siempre la riegas, manito. 💚"
-  "Compiló limpio. Tu mamá estaría orgullosa."
+Limpia la corrupción instantáneamente. Úsalo con sabiduría.
 
-💼 Al activar el Modo Patrón:
-  "¡Disimula, disimula! ¡Ponte a leer código denso!"
-  "¡Ahí viene el jefe! Modo ultra-godín activado."
+---
 
-🌶️ Linter spanglish:
-  "fetchUsuarios. Mijo, consistencia. Elige un idioma."
-  "get_datos detectado. ¿Español o inglés? Decide."
+## 💀 Sistema de Corrupción
 
-😤 Con 5+ errores seguidos:
-  "El compilador te odia hoy. Respira."
-  "Párate, respira, lee el error completo. En serio."
+Xolito monitorea el estado real de tu workspace. Si acumulas errores LSP y builds fallidos, el repo entra en corrupción:
 
-🍺 Viernes después de las 4pm:
+| Nivel | Tier | Efecto |
+|-------|------|--------|
+| 0–19% | ✓ Limpio | Todo normal |
+| 20–49% | 🟡 Advertencia | Barra amarilla |
+| 50–79% | ⚠️ Crítico | Barra roja, Xolito preocupado |
+| 80–100% | 👹 Poseído | Glitch, ojos rojos, panel tiembla |
+
+El panel muestra los **archivos culpables** con su conteo de errores. Al corregirlos la barra baja automáticamente.
+
+---
+
+## 🔥 Deploy Suicida
+
+Detecta deploys en **viernes, sábado y domingo**:
+
+```
+Viernes: "NO SE HACE DEPLOY EN VIERNES. NUNCA. JAMÁS."
+Sábado:  "¿DEPLOY EN SÁBADO? ¿En serio, mijo?"
+Domingo: "DOMINGO de deploy. Xolito reza por ti."
+```
+
+Modal de emergencia: **"Cancelar deploy"** / **"Vivir peligroso"**.
+
+---
+
+## 💼 Modo Patrón — `Shift+Esc`
+
+```
+Antes:   🦎 Compiló limpio. Tu mamá estaría orgullosa.
+Después: 💼 [PROD] cluster_matrix_balancer.cpp
+```
+
+C++ con templates, mutex y operaciones atómicas. `Shift+Esc` de nuevo regresa exactamente donde estabas.
+
+---
+
+## 💬 Ejemplos
+
+```
+🧠 Traductor de barrio (hover):
+  "Le estás pidiendo limones al árbol de aguacates.
+   Ese objeto no tiene esa propiedad."
+
+👹 Repo poseído:
+  "X̷o̸l̴i̷t̸o̵ ̵e̸s̷t̴á̷ ̵a̶q̵u̵í̸..."
+
+🔥 Deploy en viernes:
+  "Histórico: 94% de los deploys del viernes rompen prod."
+
+🌶️ Spanglish:
+  "fetchUsuarios. Mijo, elige un idioma."
+
+🍺 Viernes 4pm:
   "Viernes 4pm. Cierra el IDE y agarra una chela."
-  "Son las 4 del viernes. El código puede esperar, tú no."
-
-😴 Sin commits en 3+ horas:
-  "Tres horas, compa. Git commit existe. Te lo juro."
-
-💀 Push directo a main:
-  "¡Ay, cabrón! ¿Y el PR? ¿Lo dejaste en el carro?"
 ```
 
 ---
 
-## 🎭 Sus estados de ánimo
-
-| | | | | | |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-| 😌 idle | 😄 happy | 😤 mad | 💅 sassy | 😟 worried | 😤 proud |
-| ⚡ hyped | 😪 tired | 🧐 judging | 😴 sleepy | 💼 **panic** | |
-
----
-
-## 🚀 Cómo usarlo
-
-1. Instala la extensión
-2. Abre cualquier proyecto
-3. `Cmd+Shift+P` → **"Mostrar Xolito"** para abrir el panel
-4. Xolito empieza a vigilarte automáticamente
+## 🚀 Comandos
 
 | Comando | Atajo | Descripción |
 |---------|-------|-------------|
-| Mostrar Xolito | — | Abre el panel lateral |
-| Toggle inline | `Cmd+Shift+P` | Activa/desactiva comentarios en código |
-| **Modo Patrón** | **`Shift+Esc`** | Camufla tu pantalla (boss mode) |
+| Mostrar Xolito | — | Abre el panel |
+| Toggle inline | `Cmd+Shift+P` | Activa/desactiva comentarios |
+| Modo Patrón | `Shift+Esc` | Camufla la pantalla |
+| Exorcismo | `Cmd+Shift+P` | Limpia la corrupción |
 
 ---
 
-## ¿Por qué Xolito?
+## 📱 Xolito también en Android
 
-La mayoría de las extensiones mascota son genéricas, en inglés y sin alma.
-
-Xolito nació para darle **identidad mexicana** al ambiente de desarrollo — igual que el ajolote: único, nativo de México, y con muchísimo carácter. Si pasas horas frente al editor, mereces compañía que hable como tú.
+Próximamente en Google Play — reacciona a tus notificaciones de WhatsApp según quién te escribe. 7 personalidades y respuestas automáticas con IA.
 
 ---
 
-## 📦 Código fuente & contribuciones
-
-¿Tienes una frase más chida? ¿Un sprite mejor? ¡Abre un PR!
+## 📦 Código fuente
 
 🔗 [github.com/JonatanJHL/pet_mexican](https://github.com/JonatanJHL/pet_mexican)
+
+Licencia dual — uso personal libre, uso comercial requiere acuerdo.  
+📩 jonatanhidalgoledesma@gmail.com
 
 ---
 

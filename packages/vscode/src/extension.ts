@@ -7,11 +7,21 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { Xolito } from '@xolito/core';
 import type { XolitoEvent, XolitoMood } from '@xolito/core';
-import { CORRUPTION_PHRASES, glitchText } from '@xolito/core';
+import { glitchText } from '@xolito/core';
 import type { CorruptionState } from '@xolito/core';
 import { DiagnosticsWatcher } from './diagnostics-watcher.js';
 import { XolitoDecorations } from './decorations.js';
 import { CorruptionWatcher } from './corruption-watcher.js';
+import type { FileWithErrors } from './corruption-watcher.js';
+
+// ── Frases de corrupción ──────────────────────────────────
+const CORRUPTION_PHRASES: Record<string, string[]> = {
+  clean:    ['Repo limpio. Así se hace.', '0 corrupción. Xolito respira.', 'Clean. Todo en orden.'],
+  warning:  ['Algo huele raro en este repo...', 'Los errores se acumulan, mijo.', 'El repo empieza a crujir.', 'Xolito siente perturbaciones en el código.'],
+  critical: ['EL REPO ESTÁ EN PELIGRO.', 'Demasiados errores. La corrupción avanza.', 'El linter ya no puede salvarte.', 'Xolito está muy preocupado. Muy.'],
+  possessed:['ALIMENTASTE DEMASIADOS BUGS.', 'EL LINTER YA NO PUEDE SALVARTE.', 'Ese undefined ya tiene conciencia.', 'ERROR: XOLITO.EXE HA DEJADO DE RESPONDER.', 'Demasiada corrupción. Demasiada.'],
+};
+
 
 let xolito:      Xolito;
 let statusBar:   vscode.StatusBarItem;
@@ -33,6 +43,63 @@ let currentCorruption: CorruptionState = {
   glitchText: false, redEyes: false, screenShake: false,
 };
 let deployFridayActive = false;
+let isCurrentlyExorcised = false;
+
+// ── Sistema de Logros ─────────────────────────────────────────
+const BADGES_LIST = [
+  {
+    id: 'late_night',
+    name: 'La Noche es Joven',
+    hint: 'Pista: Intenta programar entre las 3 AM y las 5 AM.',
+    desc: 'Programar a altas horas de la madrugada.',
+    emoji: '🦉'
+  },
+  {
+    id: 'junior_errors',
+    name: 'Junior de Corazón',
+    hint: 'Pista: Acumula 10 errores de sintaxis activos.',
+    desc: 'Tener 10 o más errores concurrentes en tu código.',
+    emoji: '👶'
+  },
+  {
+    id: 'merge_hero',
+    name: 'Héroe Nacional',
+    hint: 'Pista: Resuelve y limpia un conflicto de Git (Merge Conflict).',
+    desc: 'Resolver y guardar limpio un conflicto de Git.',
+    emoji: '⚔️'
+  },
+  {
+    id: 'friday_danger',
+    name: 'Viernes de Peligro',
+    hint: 'Pista: Intenta compilar código un viernes por la tarde.',
+    desc: 'Programar o compilar código un viernes después de las 3 PM.',
+    emoji: '🌶️'
+  },
+  {
+    id: 'no_commits',
+    name: '¿Qué es un Commit?',
+    hint: 'Pista: Trabaja un buen rato sin guardar tu progreso en Git.',
+    desc: 'Guardar cambios 50 veces seguidas sin realizar un commit.',
+    emoji: '💾'
+  },
+  {
+    id: 'limpiador',
+    name: 'El Limpiador',
+    hint: 'Pista: Haz una limpieza profunda borrando mucho código de golpe.',
+    desc: 'Borrar más de 100 líneas de código de un solo golpe.',
+    emoji: '🧹'
+  },
+  {
+    id: 'terco',
+    name: 'El Terco',
+    hint: 'Pista: Intenta compilar lo mismo roto una y otra vez.',
+    desc: 'Guardar el mismo archivo roto 5 veces seguidas sin corregir errores.',
+    emoji: '🐂'
+  }
+];
+const inConflictFiles = new Set<string>();
+let consecutiveSavesWithoutCommit = 0;
+const lastSaveErrorsMap = new Map<string, { count: number; consecutiveSaves: number }>();
 
 
 // ── Stats de sesión ──────────────────────────────────────────
@@ -210,6 +277,13 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // ── Sistema de Corrupción ──────────────────────────────────
   corruptionWatcher = new CorruptionWatcher((state) => {
+    if (isCurrentlyExorcised) {
+      state.level = 0;
+      state.tier = 'clean';
+      state.glitchText = false;
+      state.redEyes = false;
+      state.screenShake = false;
+    }
     const prevTier = currentCorruption.tier;
     currentCorruption = state;
     if (state.tier !== prevTier) {
@@ -220,6 +294,13 @@ export function activate(context: vscode.ExtensionContext): void {
                              : 'worried';
       forcePhrase(phrase, mood);
     }
+
+    // Chequeo de Logro: Junior de Corazón
+    const factors = corruptionWatcher.getCurrentFactors();
+    if (factors.errorCount >= 10) {
+      unlockBadge('junior_errors', 'Junior de Corazón', '¡Ajúa! 10 errores seguidos. Te recomiendo apagar la computadora y respirar aire fresco.', 'mad');
+    }
+
     if (panel) updatePanel();
   });
   corruptionWatcher.start();
@@ -229,12 +310,30 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('xolito.greet',       () => fireEvent('greeted')),
     vscode.commands.registerCommand('xolito.toggle',      toggleDecorations),
     vscode.commands.registerCommand('xolito.panicButton', handlePanicButton),
+    vscode.commands.registerCommand('xolito.exorcise',    handleExorcise),
     statusBar,
     { dispose: () => { diagWatcher.stop(); decorations.stop(); corruptionWatcher.stop(); } },
     vscode.workspace.onDidSaveTextDocument(onSave),
     vscode.tasks.onDidEndTaskProcess(onTaskEnd),
     vscode.window.onDidChangeTextEditorSelection(() => resetIdleTimer()),
-    vscode.workspace.onDidChangeTextDocument(() => resetIdleTimer()),
+    vscode.workspace.onDidChangeTextDocument((e) => {
+      isCurrentlyExorcised = false;
+      resetIdleTimer();
+
+      let linesDeleted = 0;
+      if (e.contentChanges && e.contentChanges.length > 0) {
+        for (const change of e.contentChanges) {
+          const rangeLines = change.range.end.line - change.range.start.line;
+          const textLines = (change.text.match(/\n/g) || []).length;
+          if (rangeLines - textLines > 0) {
+            linesDeleted += (rangeLines - textLines);
+          }
+        }
+      }
+      if (linesDeleted >= 100) {
+        unlockBadge('limpiador', 'El Limpiador', '¡Eso! Borrando código inútil. Menos código, menos bugs. Ya te pareces a un programador de a verdad.', 'proud');
+      }
+    }),
   );
 
   try {
@@ -246,12 +345,67 @@ export function activate(context: vscode.ExtensionContext): void {
 
   fireEvent('greeted');
   resetIdleTimer();
+
+  // ── Timer de contexto horario — revisa cada 30 min ──────────
+  const timeContextTimer = setInterval(() => {
+    const h = new Date().getHours();
+    const day = new Date().getDay();
+    if (h >= 23 || h < 4)        fireEvent('late_night_coding');
+    if (day === 0 || day === 6)   fireEvent('weekend_coding');
+  }, 30 * 60 * 1000); // cada 30 minutos
+  context.subscriptions.push({ dispose: () => clearInterval(timeContextTimer) });
+
 }
 
 // ── onSave ────────────────────────────────────────────────────
 function onSave(doc: vscode.TextDocument): void {
+  isCurrentlyExorcised = false;
   const text = doc.getText();
   filesChanged.add(doc.fileName);
+
+  // Chequeo de Logro: La Noche es Joven
+  const hour = new Date().getHours();
+  if (hour >= 3 && hour < 5) {
+    unlockBadge('late_night', 'La Noche es Joven', '¿Qué haces despierto a estas horas? A dormir, mijo, que mañana andas arrastrando la cobija.', 'worried');
+  }
+
+  // Chequeo de Logro: Viernes de Peligro
+  const now = new Date();
+  if (now.getDay() === 5 && now.getHours() >= 15) {
+    unlockBadge('friday_danger', 'Viernes de Peligro', '¿Compilando en viernes por la tarde? Eres bien valiente, cuate. Dios guarde la hora si rompes producción.', 'panic');
+  }
+
+  // Chequeo de Logro: ¿Qué es un Commit?
+  consecutiveSavesWithoutCommit++;
+  if (consecutiveSavesWithoutCommit >= 50) {
+    unlockBadge('no_commits', '¿Qué es un Commit?', '¿Git? ¿Qué es eso? ¿Se come con salsa? Haz un commit ya, mijo, que si se te va la luz vas a llorar.', 'tired');
+  }
+
+  // Chequeo de Logro: El Terco
+  const diags = vscode.languages.getDiagnostics(doc.uri);
+  const errs = diags.filter(d => d.severity === vscode.DiagnosticSeverity.Error).length;
+  if (errs > 0) {
+    const prev = lastSaveErrorsMap.get(doc.fileName);
+    if (prev && prev.count === errs) {
+      prev.consecutiveSaves++;
+      if (prev.consecutiveSaves >= 5) {
+        unlockBadge('terco', 'El Terco', '¿Otra vez lo mismo? El compilador ya te dijo que no, cuate. El código no se va a arreglar solo por rezarle.', 'mad');
+      }
+    } else {
+      lastSaveErrorsMap.set(doc.fileName, { count: errs, consecutiveSaves: 1 });
+    }
+  } else {
+    lastSaveErrorsMap.delete(doc.fileName);
+  }
+
+  // Chequeo de Logro: Héroe Nacional
+  if (text.includes('<<<<<<<')) {
+    inConflictFiles.add(doc.fileName);
+  } else if (inConflictFiles.has(doc.fileName)) {
+    inConflictFiles.delete(doc.fileName);
+    unlockBadge('merge_hero', 'Héroe Nacional', 'Resolviste un conflicto sin romper la base. Ya te ganaste tu sombrero de charro honorario.', 'proud');
+  }
+
   if (doc.languageId !== 'markdown') {
     for (const pattern of SPANGLISH_PATTERNS) {
       if (pattern.test(text)) {
@@ -301,7 +455,8 @@ function onTerminalData(data: string): void {
     }
   }
   if (/git push.*--force/i.test(data))                      fireEvent('git_force_push');
-  else if (/git push.*origin (main|master)/i.test(data))    fireEvent('push_to_main');
+  else if (/git push.*origin (main|master)/i.test(data))  { corruptionWatcher.reportCommit(); consecutiveSavesWithoutCommit = 0; fireEvent('push_to_main'); }
+  else if (/git commit/i.test(data))                      { corruptionWatcher.reportCommit(); consecutiveSavesWithoutCommit = 0; }
   else if (/npm install|pnpm install|yarn add/i.test(data)) fireEvent('npm_install');
   else if (/CONFLICT \(content\)/i.test(data))              fireEvent('merge_conflict');
   const h = new Date().getHours(), dow = new Date().getDay();
@@ -384,8 +539,7 @@ function fireEvent(event: XolitoEvent, _detail?: string): void {
   const override = getContextualOverride(event);
   if (override) { forcePhrase(override.text, override.mood); return; }
   const { text } = xolito.react(event);
-  if (event === 'build_success') { buildsToday++; buildsSuccess++; }
-  if (event === 'build_fail')    { buildsToday++; buildsFail++; }
+  // El conteo de builds ya lo hace onTaskEnd — no contar aquí de nuevo
   lastPhrase = text;
   const t = new Date();
   const ts = `${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
@@ -445,6 +599,11 @@ function showPanel(): void {
     'xolito', '🦎 Xolito', vscode.ViewColumn.Beside,
     { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(extContext.extensionUri, 'assets')] }
   );
+  panel.webview.onDidReceiveMessage(message => {
+    if (message.command === 'exorcise') {
+      vscode.commands.executeCommand('xolito.exorcise');
+    }
+  });
   panel.onDidDispose(() => { panel = undefined; });
   updatePanel();
 }
@@ -460,13 +619,17 @@ function getSpriteUri(mood: XolitoMood): string {
 
 function updatePanel(): void {
   if (!panel) return;
-  const mood      = xolito.getMood();
+  const baseMood    = xolito.getMood();
+  const mood: XolitoMood = currentCorruption.tier === "possessed" ? "corrupt"
+               : currentCorruption.tier === "critical" && baseMood !== "panic" ? "mad"
+               : baseMood;
   const errors    = xolito.getErrorCount();
   const counts    = diagWatcher.getCurrentCounts();
   const phrase    = lastPhrase;
   const spriteUrl = getSpriteUri(mood);
   const mc        = MOOD_COLORS[mood] ?? '#4ec9b0';
-  const corrupt   = currentCorruption;
+  const corrupt   = isCurrentlyExorcised ? { level: 0, tier: 'clean' as const, glitchText: false, redEyes: false, screenShake: false } : currentCorruption;
+  const unlockedBadges = extContext.globalState.get<string[]>('xolito.badges', []);
 
   // Colores de corrupción
   const corruptColor =
@@ -526,6 +689,10 @@ function updatePanel(): void {
   .corrupt-wrap{width:100%;max-width:220px;padding:8px;background:#1a1a1a;border-radius:8px;margin:.5rem 0;position:relative;${shakeCSS}}
   .corrupt-label{font-size:.72rem;font-family:monospace;text-align:center;margin-top:4px}
   .corrupt-factors{display:flex;gap:8px;justify-content:center;margin-top:5px;font-size:.62rem;color:#555;font-family:monospace}
+  .corrupt-files{width:100%;margin-top:6px;font-family:monospace}
+  .corrupt-file{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #2a2a2a;font-size:.62rem}
+  .corrupt-file-name{color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+  .corrupt-file-count{color:#f44747;flex-shrink:0}
   .history{width:100%;max-width:220px}
   .history-item{display:flex;gap:6px;padding:4px 0;border-bottom:1px solid #2a2a2a}
   .hi-time{font-size:.65rem;color:#444;font-family:monospace;white-space:nowrap;margin-top:1px}
@@ -555,16 +722,52 @@ function updatePanel(): void {
   <div class="section-title" style="color:${corruptColor}">Estado del Repo</div>
   <div class="corrupt-wrap">
     ${redOverlay}
+    ${!vscode.workspace.workspaceFolders?.length ? `
+    <div style="font-size:.7rem;color:#555;text-align:center;padding:6px 0;line-height:1.5">
+      💡 Abre una carpeta de proyecto<br>para activar el monitor de corrupción.<br>
+      <span style="color:#333">File → Open Folder</span>
+    </div>` : `
     <div class="bar-bg">
       <div class="bar-fill" style="width:${corrupt.level}%;background:${corruptColor}"></div>
     </div>
     <div class="corrupt-label" style="color:${corruptColor}">${corruptPhrase}</div>
+    ${corrupt.tier === 'clean' ? '<div style="font-size:.65rem;color:#333;text-align:center;margin-top:4px">0 errores detectados en este workspace</div>' : ''}
+    `}
     ${corrupt.tier !== 'clean' ? `
     <div class="corrupt-factors">
-      <span>TODOs: ${factors.todoCount}</span>
       <span>Errors: ${factors.errorCount}</span>
       <span>Fails: ${factors.consecutiveFails}</span>
-    </div>` : ''}
+    </div>
+    ${corrupt.tier === 'possessed' ? `
+    <button onclick="exorcise()" style="width:100%;margin-top:8px;padding:6px;background:#ff2222;color:white;border:none;border-radius:4px;font-weight:bold;font-family:monospace;cursor:pointer;animation:blink 1.2s infinite;box-shadow:0 0 8px #ff2222aa;">🔮 REALIZAR EXORCISMO</button>
+    ` : ''}
+    ${corruptionWatcher.getFilesWithErrors().length > 0 ? `
+    <div class="corrupt-files">
+      ${corruptionWatcher.getFilesWithErrors().map(f => `
+        <div class="corrupt-file">
+          <span class="corrupt-file-name" title="${f.name}">${f.name.split('/').pop()}</span>
+          <span class="corrupt-file-count">${f.errors} err</span>
+        </div>
+      `).join('')}
+    </div>` : ''}` : ''}
+  </div>
+
+  <div class="section-title">Tus Medallas 🏅</div>
+  <div style="display:flex;flex-direction:column;gap:6px;width:100%;max-width:220px;margin-bottom:.5rem;">
+    ${BADGES_LIST.map(badge => {
+      const unlocked = unlockedBadges.includes(badge.id);
+      return `
+        <div style="display:flex;align-items:center;gap:8px;background:${unlocked ? '#2d2d2d' : '#1a1a1a'};border:1px solid ${unlocked ? '#4ec9b044' : '#2a2a2a'};border-radius:6px;padding:6px;opacity:${unlocked ? 1 : 0.55};">
+          <div style="font-size:1.3rem;flex-shrink:0;">${unlocked ? badge.emoji : '🔒'}</div>
+          <div style="display:flex;flex-direction:column;text-align:left;overflow:hidden;flex-grow:1;">
+            <span style="font-size:.7rem;font-weight:bold;color:${unlocked ? '#4ec9b0' : '#666'};line-height:1.2;">${badge.name}</span>
+            <span style="font-size:.6rem;color:#7a7a7a;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;margin-top:2px;" title="${unlocked ? badge.desc : badge.hint}">
+              ${unlocked ? badge.desc : badge.hint}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('')}
   </div>
 
   <div class="section-title">Sesión</div>
@@ -589,6 +792,97 @@ function updatePanel(): void {
     ${messageHistory.map(m=>`<div class="history-item"><span class="hi-time">${m.time}</span><span class="hi-text">"${m.text}"</span></div>`).join('')}
   </div>
   <div class="footer">"Aquí estoy, cuidándote...<br>y juzgándote con cariño."</div>
+
+  <!-- Fullscreen Exorcism Overlay -->
+  <div id="exorcism-overlay" style="display:none;position:fixed;inset:0;background:radial-gradient(circle,#0e2b1b 0%,#050f0a 100%);color:#4ec9b0;flex-direction:column;align-items:center;justify-content:center;z-index:9999;font-family:monospace;padding:2rem;text-align:center;overflow:hidden;">
+    <div id="emoji-container" style="position:absolute;inset:0;pointer-events:none;z-index:9990;overflow:hidden;"></div>
+    <div style="width:120px;height:120px;border:4px dashed #4ec9b0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;margin-bottom:1.5rem;animation:rotateCircle 4s linear infinite;z-index:9999;">🔮</div>
+    <h2 style="font-size:1.1rem;margin-bottom:0.5rem;text-shadow:0 0 10px #4ec9b055;z-index:9999;">EXORCISMO RITUAL</h2>
+    <div id="exorcism-step" style="font-size:0.75rem;color:#7a7a7a;height:30px;z-index:9999;">Iniciando ritual copal...</div>
+    <div style="width:180px;height:4px;background:#1a3a2a;border-radius:2px;overflow:hidden;margin-top:1rem;z-index:9999;">
+      <div id="exorcism-bar" style="width:0%;height:100%;background:#4ec9b0;transition:width 0.1s ease;"></div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes rotateCircle{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+    @keyframes floatUp {
+      0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.6; }
+      100% { transform: translateY(-105vh) rotate(360deg); opacity: 0; }
+    }
+  </style>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+    function exorcise() {
+      vscode.postMessage({ command: 'exorcise' });
+    }
+
+    window.addEventListener('message', event => {
+      const message = event.data;
+      if (message.command === 'exorcise_start') {
+        const overlay = document.getElementById('exorcism-overlay');
+        const container = document.getElementById('emoji-container');
+        overlay.style.display = 'flex';
+        container.innerHTML = '';
+        
+        // Spawn emojis in background
+        const emojis = ['🌿', '💧', '💻', '🔮', '✨', '🔥', '🦎', '🌿', '💧', '💻'];
+        const emojiInterval = setInterval(() => {
+          if (overlay.style.display === 'none') {
+            clearInterval(emojiInterval);
+            return;
+          }
+          const div = document.createElement('div');
+          div.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+          div.style.position = 'absolute';
+          div.style.bottom = '-40px';
+          div.style.left = Math.random() * 90 + 5 + '%';
+          div.style.fontSize = (Math.random() * 1.5 + 1.2) + 'rem';
+          div.style.pointerEvents = 'none';
+          div.style.zIndex = '9998';
+          div.style.animation = 'floatUp 4s linear forwards';
+          container.appendChild(div);
+          
+          setTimeout(() => div.remove(), 4000);
+        }, 220);
+
+        let progress = 0;
+        const steps = [
+          { p: 0, text: "Defumando con copal digital... 🌿" },
+          { p: 30, text: "Echando agua bendita al package.json... 💧" },
+          { p: 65, text: "Rezándole 3 Padre Nuestro al server... 💻" },
+          { p: 95, text: "¡Exorcismo exitoso! 🌟" }
+        ];
+        
+        const bar = document.getElementById('exorcism-bar');
+        const stepText = document.getElementById('exorcism-step');
+        
+        let currentStep = 0;
+        const interval = setInterval(() => {
+          progress += 2; // +2% every 110ms = 50 steps * 110ms = 5500ms total
+          if (progress > 100) progress = 100;
+          bar.style.width = progress + '%';
+          
+          if (currentStep < steps.length && progress >= steps[currentStep].p) {
+            stepText.innerText = steps[currentStep].text;
+            currentStep++;
+          }
+          
+          if (progress >= 100) {
+            clearInterval(interval);
+            clearInterval(emojiInterval);
+            setTimeout(() => {
+              overlay.style.display = 'none';
+              container.innerHTML = '';
+            }, 800);
+          }
+        }, 110);
+      }
+    });
+  </script>
 </body></html>`;
 }
 
@@ -624,6 +918,45 @@ async function handlePanicButton(): Promise<void> {
     }
     dummyDocUri = undefined;
     fireEvent('greeted');
+    if (panel) updatePanel();
+  }
+}
+
+async function handleExorcise(): Promise<void> {
+  isCurrentlyExorcised = true;
+  if (panel) {
+    panel.webview.postMessage({ command: 'exorcise_start' });
+  }
+
+  await vscode.window.withProgress({
+    location: vscode.ProgressLocation.Notification,
+    title: "Exorcizando a Xolito 🔮",
+    cancellable: false
+  }, async (progress) => {
+    progress.report({ increment: 0, message: "Preparando copal digital... 🌿" });
+    await new Promise(resolve => setTimeout(resolve, 1800));
+    progress.report({ increment: 35, message: "Echando agua bendita al package.json... 💧" });
+    await new Promise(resolve => setTimeout(resolve, 1800));
+    progress.report({ increment: 35, message: "Rezándole 3 Padre Nuestro al servidor de producción... 💻" });
+    await new Promise(resolve => setTimeout(resolve, 1900));
+    progress.report({ increment: 30, message: "¡Exorcismo exitoso!" });
+  });
+
+  consecutiveErrors = 0;
+  corruptionWatcher.reportBuildSuccess();
+  xolito.react('build_success');
+  vscode.window.showInformationMessage("🦎 Xolito: Uff... ya regresó el alma al cuerpo, mijo. ¡A darle de volada!");
+  forcePhrase("Uff... ya regresó el alma al cuerpo, mijo. ¡A darle de volada!", 'happy');
+  if (panel) updatePanel();
+}
+
+function unlockBadge(badgeId: string, badgeName: string, reactionPhrase: string, reactionMood: XolitoMood = 'proud'): void {
+  const currentBadges = extContext.globalState.get<string[]>('xolito.badges', []);
+  if (!currentBadges.includes(badgeId)) {
+    currentBadges.push(badgeId);
+    extContext.globalState.update('xolito.badges', currentBadges);
+    vscode.window.showInformationMessage(`🏅 ¡Medalla Desbloqueada! "${badgeName}" — Xolito está orgulloso.`);
+    forcePhrase(reactionPhrase, reactionMood);
     if (panel) updatePanel();
   }
 }

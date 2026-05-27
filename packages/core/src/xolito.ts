@@ -4,7 +4,7 @@
 // ============================================================
 
 import { getPhrase } from './phrases.js';
-import { renderWithBubble } from './sprites.js';
+import { renderWithBubble, SPRITES } from './sprites.js';
 import type { XolitoConfig, XolitoEvent, XolitoMood, XolitoPhrase } from './types.js';
 
 export class Xolito {
@@ -51,7 +51,6 @@ export class Xolito {
 
   /** Sólo el sprite, sin burbuja */
   renderSprite(): string {
-    const { SPRITES } = require('./sprites.js');
     return SPRITES[this.currentMood].join('\n');
   }
 

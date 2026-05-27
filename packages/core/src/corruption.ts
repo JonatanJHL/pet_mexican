@@ -1,7 +1,9 @@
 // ============================================================
 //  xolito/packages/core/src/corruption.ts
 //  Sistema de Corrupción del Repo
+//  Las frases viven en phrases.ts — source of truth único
 // ============================================================
+
 
 export interface CorruptionFactors {
   todoCount:          number;
@@ -35,7 +37,7 @@ const WEIGHTS = {
 
 const CAPS = {
   todoCount:          20,
-  errorCount:         10,
+  errorCount:         30,  // 30 errores máx
   deadFileCount:      15,
   consecutiveFails:   5,
   hoursWithoutCommit: 12,
@@ -64,34 +66,7 @@ export function calculateCorruption(f: CorruptionFactors): CorruptionState {
   };
 }
 
-export const CORRUPTION_PHRASES: Record<CorruptionTier, string[]> = {
-  clean: [
-    'Repo limpio. Así se hace.',
-    '0 corrupción. ¿Quién eres?',
-    'Clean. Xolito respira tranquilo.',
-  ],
-  warning: [
-    'Algo huele raro en este repo...',
-    'Los TODOs se están acumulando, mijo.',
-    'El repo empieza a crujir. Limpia eso.',
-    'Xolito siente perturbaciones en el código.',
-  ],
-  critical: [
-    'EL REPO ESTÁ EN PELIGRO.',
-    'Demasiados errores. La corrupción avanza.',
-    'Xolito está preocupado. Muy preocupado.',
-    'El linter ya no puede salvarte.',
-  ],
-  possessed: [
-    'ALIMENTASTE DEMASIADOS BUGS.',
-    'EL LINTER YA NO PUEDE SALVARTE.',
-    'Ese undefined ya tiene conciencia.',
-    'ERROR: XOLITO.EXE HA DEJADO DE RESPONDER.',
-    'Demasiada corrupción. Demasiada.',
-  ],
-};
-
-const GLITCH_CHARS = ['̷','̸','̴','̵','̶'];
+export const GLITCH_CHARS = ['̷','̸','̴','̵','̶'];
 
 export function glitchText(text: string, intensity: number): string {
   if (intensity < 50) return text;
