@@ -2,7 +2,7 @@
   "name": "xolito-vscode",
   "displayName": "Xolito 🦎",
   "description": "Tu ajolote regañón para VS Code. Detecta errores, te regaña con cariño y habla español mexicano.",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "publisher": "xolito",
   "icon": "assets/xolito_idle.png",
   "repository": {
@@ -56,6 +56,10 @@
       {
         "command": "xolito.exorcise",
         "title": "🦎 Xolito: Realizar Exorcismo Rápido 🔮"
+      },
+      {
+        "command": "xolito.evaluateCodeSelection",
+        "title": "🦎 Xolito: Evaluar Código Seleccionado"
       }
     ],
     "keybindings": [
@@ -64,7 +68,26 @@
         "key": "shift+escape",
         "when": "editorFocus"
       }
-    ]
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "xolito.evaluateCodeSelection",
+          "group": "xolito@1",
+          "when": "editorHasSelection"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Xolito",
+      "properties": {
+        "xolito.geminiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key de Google Gemini para usar el Evaluador de Código de Xolito."
+        }
+      }
+    }
   },
   "scripts": {
     "build": "node build.mjs",

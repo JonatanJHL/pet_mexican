@@ -5,8 +5,8 @@
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { Xolito } from '@xolito/core';
-import type { XolitoEvent, XolitoMood } from '@xolito/core';
+import { Xolito, evaluateCodeOffline, evaluateCodeWithGemini } from '@xolito/core';
+import type { XolitoEvent, XolitoMood, CodeEvaluationResult } from '@xolito/core';
 import { glitchText } from '@xolito/core';
 import type { CorruptionState } from '@xolito/core';
 import { DiagnosticsWatcher } from './diagnostics-watcher.js';
@@ -44,6 +44,12 @@ let currentCorruption: CorruptionState = {
 };
 let deployFridayActive = false;
 let isCurrentlyExorcised = false;
+
+// ── Evaluador de Código de Xolito ────────────────────────────
+let lastEvaluationResult: CodeEvaluationResult | undefined;
+let lastSelectedText: string = "";
+let lastSelectedEditor: vscode.TextEditor | undefined;
+let lastSelectedRange: vscode.Range | undefined;
 
 // ── Sistema de Logros ─────────────────────────────────────────
 const BADGES_LIST = [
@@ -311,6 +317,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('xolito.toggle',      toggleDecorations),
     vscode.commands.registerCommand('xolito.panicButton', handlePanicButton),
     vscode.commands.registerCommand('xolito.exorcise',    handleExorcise),
+    vscode.commands.registerCommand('xolito.evaluateCodeSelection', handleEvaluateCodeSelection),
     statusBar,
     { dispose: () => { diagWatcher.stop(); decorations.stop(); corruptionWatcher.stop(); } },
     vscode.workspace.onDidSaveTextDocument(onSave),
@@ -599,9 +606,71 @@ function showPanel(): void {
     'xolito', '🦎 Xolito', vscode.ViewColumn.Beside,
     { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(extContext.extensionUri, 'assets')] }
   );
-  panel.webview.onDidReceiveMessage(message => {
+  panel.webview.onDidReceiveMessage(async (message) => {
     if (message.command === 'exorcise') {
       vscode.commands.executeCommand('xolito.exorcise');
+    } else if (message.command === 'evaluate_custom') {
+      const customText = message.text;
+      const customLang = message.language || 'typescript';
+      
+      const editor = vscode.window.activeTextEditor;
+      if (editor && editor.document.getText(editor.selection).trim() === customText.trim()) {
+        lastSelectedEditor = editor;
+        lastSelectedRange = new vscode.Range(editor.selection.start, editor.selection.end);
+      } else {
+        lastSelectedEditor = undefined;
+        lastSelectedRange = undefined;
+      }
+
+      const apiKey = vscode.workspace.getConfiguration('xolito').get<string>('geminiApiKey', '').trim();
+      let result: CodeEvaluationResult;
+      try {
+        if (apiKey) {
+          result = await evaluateCodeWithGemini(customText, customLang, apiKey);
+        } else {
+          result = evaluateCodeOffline(customText, customLang);
+        }
+      } catch (err) {
+        result = evaluateCodeOffline(customText, customLang);
+      }
+
+      lastEvaluationResult = result;
+      panel?.webview.postMessage({ command: 'evaluation_result', result });
+    } else if (message.command === 'apply_refactor') {
+      if (!lastEvaluationResult || !lastEvaluationResult.refactoredCode) {
+        vscode.window.showErrorMessage('🦎 Xolito: No hay ninguna refactorización propuesta para aplicar, mijo.');
+        return;
+      }
+
+      const editor = lastSelectedEditor || vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showErrorMessage('🦎 Xolito: No encuentro un editor abierto para aplicar los cambios.');
+        return;
+      }
+
+      const targetRange = lastSelectedRange || editor.selection;
+
+      editor.edit(editBuilder => {
+        editBuilder.replace(targetRange, lastEvaluationResult!.refactoredCode!);
+      }).then(success => {
+        if (success) {
+          vscode.window.showInformationMessage('🦎 Xolito: ¡Refactorización aplicada con éxito! Chulada de código. ✨');
+        } else {
+          vscode.window.showErrorMessage('🦎 Xolito: No se pudo editar el documento.');
+        }
+      });
+    } else if (message.command === 'import_selection') {
+      const editor = vscode.window.activeTextEditor;
+      if (editor) {
+        const selection = editor.selection;
+        const text = editor.document.getText(selection).trim();
+        const language = editor.document.languageId;
+        lastSelectedEditor = editor;
+        lastSelectedRange = new vscode.Range(selection.start, selection.end);
+        panel?.webview.postMessage({ command: 'import_selection_result', text, language });
+      } else {
+        vscode.window.showWarningMessage('🦎 Xolito: No hay ningún editor activo para importar.');
+      }
     }
   });
   panel.onDidDispose(() => { panel = undefined; });
@@ -752,23 +821,89 @@ function updatePanel(): void {
     </div>` : ''}` : ''}
   </div>
 
-  <div class="section-title">Tus Medallas 🏅</div>
-  <div style="display:flex;flex-direction:column;gap:6px;width:100%;max-width:220px;margin-bottom:.5rem;">
-    ${BADGES_LIST.map(badge => {
-      const unlocked = unlockedBadges.includes(badge.id);
-      return `
-        <div style="display:flex;align-items:center;gap:8px;background:${unlocked ? '#2d2d2d' : '#1a1a1a'};border:1px solid ${unlocked ? '#4ec9b044' : '#2a2a2a'};border-radius:6px;padding:6px;opacity:${unlocked ? 1 : 0.55};">
-          <div style="font-size:1.3rem;flex-shrink:0;">${unlocked ? badge.emoji : '🔒'}</div>
-          <div style="display:flex;flex-direction:column;text-align:left;overflow:hidden;flex-grow:1;">
-            <span style="font-size:.7rem;font-weight:bold;color:${unlocked ? '#4ec9b0' : '#666'};line-height:1.2;">${badge.name}</span>
-            <span style="font-size:.6rem;color:#7a7a7a;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;margin-top:2px;" title="${unlocked ? badge.desc : badge.hint}">
-              ${unlocked ? badge.desc : badge.hint}
-            </span>
-          </div>
-        </div>
-      `;
-    }).join('')}
+  <!-- SECCIÓN AUDITORÍA DE CÓDIGO -->
+  <div class="section-title">Auditoría de Código 📊</div>
+  <div style="width:100%;max-width:220px;background:#2d2d2d;border:1px solid #444;border-radius:8px;padding:8px;margin-bottom:1rem;display:flex;flex-direction:column;gap:8px;">
+    <div style="position:relative;display:flex;flex-direction:column;">
+      <label style="font-size:0.65rem;color:#7a7a7a;margin-bottom:3px;text-align:left;">Código a evaluar:</label>
+      <textarea id="code-input" placeholder="Selecciona código en tu editor y haz clic derecho -> Evaluar Código, o pégalo aquí..." style="width:100%;height:100px;background:#1e1e1e;border:1px solid #444;border-radius:4px;color:#d4d4d4;font-family:monospace;font-size:0.65rem;padding:6px;resize:vertical;outline:none;text-align:left;"></textarea>
+    </div>
+    
+    <div style="display:flex;gap:6px;justify-content:space-between;align-items:center;">
+      <select id="lang-select" style="background:#1e1e1e;color:#d4d4d4;border:1px solid #444;border-radius:4px;font-size:0.62rem;padding:3px;outline:none;cursor:pointer;">
+        <option value="auto" selected>Auto-detectar ✨</option>
+        <option value="typescript">TypeScript</option>
+        <option value="javascript">JavaScript</option>
+        <option value="kotlin">Kotlin</option>
+        <option value="java">Java</option>
+        <option value="python">Python</option>
+        <option value="cpp">C++</option>
+      </select>
+      <button onclick="importSelection()" style="background:#3c3c3c;color:#d4d4d4;border:none;border-radius:4px;padding:4px 8px;font-size:0.62rem;cursor:pointer;font-weight:bold;">Importar 📝</button>
+    </div>
+
+    <button onclick="evaluateCustomCode()" id="btn-eval" style="width:100%;background:#4ec9b0;color:#1e1e1e;border:none;border-radius:4px;padding:6px;font-size:0.7rem;font-weight:bold;cursor:pointer;transition:background 0.2s;">EVALUAR CÓDIGO 🦎</button>
+
+    <!-- Spinner de carga -->
+    <div id="eval-loading" style="display:none;align-items:center;justify-content:center;gap:6px;font-size:0.65rem;color:#4ec9b0;padding:6px 0;font-family:monospace;">
+      <span style="display:inline-block;animation:spin 1s linear infinite;">🔄</span> Pensando...
+    </div>
+
+    <!-- Resultados de la Auditoría -->
+    <div id="eval-results" style="display:none;flex-direction:column;gap:6px;margin-top:4px;border-top:1px solid #3c3c3c;padding-top:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.65rem;">
+        <span style="color:#7a7a7a;">Modo: <span id="eval-mode" style="font-weight:bold;color:#9cdcfe;">Local</span></span>
+        <span style="font-weight:bold;color:#4ec9b0;">Score: <span id="eval-score" style="font-size:0.9rem;">0</span>/10</span>
+      </div>
+      
+      <div id="eval-score-bar-bg" style="width:100%;height:6px;background:#1e1e1e;border-radius:3px;overflow:hidden;">
+        <div id="eval-score-bar-fill" style="width:0%;height:100%;background:#4ec9b0;transition:width 0.3s ease;"></div>
+      </div>
+
+      <!-- Desglose de rúbricas -->
+      <div style="display:flex;flex-direction:column;gap:3px;font-size:0.6rem;font-family:monospace;margin:4px 0;text-align:left;">
+        <div style="display:flex;justify-content:space-between;"><span>Semántica:</span><span id="rubric-semantica" style="font-weight:bold;">❌</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>Robustez:</span><span id="rubric-robustez" style="font-weight:bold;">❌</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>Modularidad:</span><span id="rubric-modularidad" style="font-weight:bold;">❌</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>Documentación:</span><span id="rubric-documentacion" style="font-weight:bold;">❌</span></div>
+      </div>
+
+      <!-- Regaño de Xolito -->
+      <div style="background:#1e1e1e;border-left:3px solid #ff2222;border-radius:3px;padding:6px;font-size:0.65rem;color:#cca700;font-style:italic;line-height:1.3;margin-top:2px;text-align:left;">
+        <span id="eval-regaño">""</span>
+      </div>
+
+      <!-- Propuesta de Refactorización -->
+      <div id="refactor-section" style="display:none;flex-direction:column;gap:4px;margin-top:4px;text-align:left;">
+        <label style="font-size:0.62rem;color:#7a7a7a;">Propuesta limpia (IA):</label>
+        <pre id="refactor-code" style="max-width:100%;max-height:120px;overflow:auto;background:#1e1e1e;padding:6px;font-size:0.55rem;border-radius:4px;border:1px solid #3c3c3c;color:#9cdcfe;text-align:left;white-space:pre-wrap;word-break:break-all;font-family:monospace;"></pre>
+        <button onclick="applyRefactor()" style="background:#cca700;color:#1e1e1e;border:none;border-radius:4px;padding:5px;font-size:0.65rem;font-weight:bold;cursor:pointer;">APLICAR REFACTORIZACIÓN ✨</button>
+      </div>
+    </div>
   </div>
+
+  <details style="width:100%;max-width:220px;margin-bottom:1rem;background:#2d2d2d;border:1px solid #444;border-radius:8px;overflow:hidden;text-align:left;">
+    <summary style="font-size:.75rem;font-weight:bold;color:#4ec9b0;padding:8px 12px;cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center;outline:none;">
+      <span>Tus Medallas 🏅</span>
+      <span style="font-size:0.65rem;color:#7a7a7a;">(${unlockedBadges.length}/${BADGES_LIST.length}) ▼</span>
+    </summary>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:8px;background:#1e1e1e;border-top:1px solid #3c3c3c;max-height:250px;overflow-y:auto;">
+      ${BADGES_LIST.map(badge => {
+        const unlocked = unlockedBadges.includes(badge.id);
+        return `
+          <div style="display:flex;align-items:center;gap:8px;background:${unlocked ? '#2d2d2d' : '#1a1a1a'};border:1px solid ${unlocked ? '#4ec9b044' : '#2a2a2a'};border-radius:6px;padding:6px;opacity:${unlocked ? 1 : 0.55};">
+            <div style="font-size:1.3rem;flex-shrink:0;">${unlocked ? badge.emoji : '🔒'}</div>
+            <div style="display:flex;flex-direction:column;text-align:left;overflow:hidden;flex-grow:1;">
+              <span style="font-size:.7rem;font-weight:bold;color:${unlocked ? '#4ec9b0' : '#666'};line-height:1.2;">${badge.name}</span>
+              <span style="font-size:.6rem;color:#7a7a7a;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;margin-top:2px;" title="${unlocked ? badge.desc : badge.hint}">
+                ${unlocked ? badge.desc : badge.hint}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  </details>
 
   <div class="section-title">Sesión</div>
   <div class="stats">
@@ -812,12 +947,54 @@ function updatePanel(): void {
       90% { opacity: 0.6; }
       100% { transform: translateY(-105vh) rotate(360deg); opacity: 0; }
     }
+    @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
   </style>
 
   <script>
     const vscode = acquireVsCodeApi();
+    
     function exorcise() {
       vscode.postMessage({ command: 'exorcise' });
+    }
+
+    function setLanguageInSelect(lang) {
+      if (!lang) return;
+      const select = document.getElementById('lang-select');
+      let exists = false;
+      for (let i = 0; i < select.options.length; i++) {
+        if (select.options[i].value === lang) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) {
+        const opt = document.createElement('option');
+        opt.value = lang;
+        opt.innerText = lang.charAt(0).toUpperCase() + lang.slice(1);
+        select.appendChild(opt);
+      }
+      select.value = lang;
+    }
+
+    function evaluateCustomCode() {
+      const code = document.getElementById('code-input').value;
+      const language = document.getElementById('lang-select').value;
+      if (!code.trim()) return;
+      
+      document.getElementById('btn-eval').disabled = true;
+      document.getElementById('eval-loading').style.display = 'flex';
+      document.getElementById('eval-results').style.display = 'none';
+      
+      vscode.postMessage({ command: 'evaluate_custom', text: code, language: language });
+    }
+
+    function importSelection() {
+      vscode.postMessage({ command: 'import_selection' });
+    }
+
+    function applyRefactor() {
+      vscode.postMessage({ command: 'apply_refactor' });
     }
 
     window.addEventListener('message', event => {
@@ -880,6 +1057,61 @@ function updatePanel(): void {
             }, 800);
           }
         }, 110);
+      } else if (message.command === 'evaluation_start') {
+        document.getElementById('code-input').value = message.text || '';
+        if (message.language) {
+          setLanguageInSelect(message.language);
+        }
+        document.getElementById('btn-eval').disabled = true;
+        document.getElementById('eval-loading').style.display = 'flex';
+        document.getElementById('eval-results').style.display = 'none';
+      } else if (message.command === 'evaluation_result') {
+        document.getElementById('btn-eval').disabled = false;
+        document.getElementById('eval-loading').style.display = 'none';
+        document.getElementById('eval-results').style.display = 'flex';
+        
+        const result = message.result;
+        
+        // Modo y Score
+        document.getElementById('eval-mode').innerText = (result.mode === 'online' ? 'IA Activa ⚡' : 'Local Offline 🔌') + ' (' + result.language + ')';
+        document.getElementById('eval-score').innerText = result.score;
+        if (result.language) {
+          setLanguageInSelect(result.language);
+        }
+        
+        // Barra de progreso y colores
+        const barFill = document.getElementById('eval-score-bar-fill');
+        barFill.style.width = (result.score * 10) + '%';
+        if (result.score >= 8) {
+          barFill.style.background = '#4ec9b0'; // Verde
+        } else if (result.score >= 5) {
+          barFill.style.background = '#cca700'; // Amarillo
+        } else {
+          barFill.style.background = '#ff2222'; // Rojo
+        }
+        
+        // Rúbricas
+        document.getElementById('rubric-semantica').innerText = (result.semantica.passed ? '✅ ' : '❌ ') + result.semantica.comment;
+        document.getElementById('rubric-robustez').innerText = (result.robustez.passed ? '✅ ' : '❌ ') + result.robustez.comment;
+        document.getElementById('rubric-modularidad').innerText = (result.modularidad.passed ? '✅ ' : '❌ ') + result.modularidad.comment;
+        document.getElementById('rubric-documentacion').innerText = (result.documentacion.passed ? '✅ ' : '❌ ') + result.documentacion.comment;
+        
+        // Regaño
+        document.getElementById('eval-regaño').innerText = '"' + result.xolitoRegaño + '"';
+        
+        // Refactorización
+        const refactorSec = document.getElementById('refactor-section');
+        if (result.refactoredCode) {
+          refactorSec.style.display = 'flex';
+          document.getElementById('refactor-code').innerText = result.refactoredCode;
+        } else {
+          refactorSec.style.display = 'none';
+        }
+      } else if (message.command === 'import_selection_result') {
+        document.getElementById('code-input').value = message.text || '';
+        if (message.language) {
+          setLanguageInSelect(message.language);
+        }
       }
     });
   </script>
@@ -948,6 +1180,55 @@ async function handleExorcise(): Promise<void> {
   vscode.window.showInformationMessage("🦎 Xolito: Uff... ya regresó el alma al cuerpo, mijo. ¡A darle de volada!");
   forcePhrase("Uff... ya regresó el alma al cuerpo, mijo. ¡A darle de volada!", 'happy');
   if (panel) updatePanel();
+}
+
+async function handleEvaluateCodeSelection(): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    vscode.window.showWarningMessage('🦎 Xolito: No hay ningún editor activo, mijo.');
+    return;
+  }
+
+  const selection = editor.selection;
+  const selectedText = editor.document.getText(selection).trim();
+
+  if (!selectedText) {
+    vscode.window.showWarningMessage('🦎 Xolito: Primero selecciona un bloque de código para evaluar.');
+    return;
+  }
+
+  lastSelectedText = selectedText;
+  lastSelectedEditor = editor;
+  lastSelectedRange = new vscode.Range(selection.start, selection.end);
+
+  const language = editor.document.languageId;
+
+  // Mostrar el panel de Xolito
+  showPanel();
+
+  // Señalizar al webview que empiece a cargar
+  if (panel) {
+    panel.webview.postMessage({ command: 'evaluation_start', text: selectedText, language });
+  }
+
+  const apiKey = vscode.workspace.getConfiguration('xolito').get<string>('geminiApiKey', '').trim();
+
+  let result: CodeEvaluationResult;
+  try {
+    if (apiKey) {
+      result = await evaluateCodeWithGemini(selectedText, language, apiKey);
+    } else {
+      result = evaluateCodeOffline(selectedText, language);
+    }
+  } catch (err) {
+    result = evaluateCodeOffline(selectedText, language);
+  }
+
+  lastEvaluationResult = result;
+
+  if (panel) {
+    panel.webview.postMessage({ command: 'evaluation_result', result });
+  }
 }
 
 function unlockBadge(badgeId: string, badgeName: string, reactionPhrase: string, reactionMood: XolitoMood = 'proud'): void {

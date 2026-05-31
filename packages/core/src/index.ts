@@ -7,3 +7,5 @@ export type { XolitoConfig, XolitoEvent, XolitoMood, XolitoPhrase } from './type
 export type { XolitoSpriteColors } from './sprites/generator.js';
 export { calculateCorruption, glitchText } from './corruption.js';
 export type { CorruptionState, CorruptionFactors, CorruptionTier } from './corruption.js';
+export { evaluateCodeOffline, evaluateCodeWithGemini } from './xolito-code.js';
+export type { CodeEvaluationResult } from './xolito-code.js';

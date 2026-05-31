@@ -21,9 +21,12 @@ Porque escribir código sin que alguien te diga que la regaste… no tiene graci
 ## ✨ ¿Qué hace?
 
 - 🔴 **Detecta errores LSP en tiempo real** — TypeScript, PHP, Python, Go, Rust, C#, Java y más
+- 📊 **Auditoría de Código Híbrida** — evalúa la calidad de tu código (Semántica, Robustez, Modularidad, Documentación) con score/10 y regaño de Xolito (offline con reglas locales, online con IA de Gemini 2.0)
+- ✨ **Refactorización con 1-Clic** — aplica las sugerencias de código limpio propuestas por la IA directo en tu editor activo
+- 🔍 **Auto-Identificación de Lenguajes** — detecta automáticamente el lenguaje de programación en el editor o en el panel (soporta TS, JS, Python, Kotlin, Java, C++, Rust, Go, C#, PHP y Ruby)
 - 🧠 **Traductor de Barrio** — traduce errores técnicos a español mexicano con hover
 - 💬 **Comentarios inline con rotación** — frases distintas por tipo de error, sin repetirse
-- 🏆 **Sistema de Logros** — 7 badges desbloqueables por tus hábitos de código
+- 🏆 **Sistema de Logros** — 7 badges desbloqueables por tus hábitos de código (ahora agrupados en un panel colapsable para optimizar espacio)
 - 🔮 **Exorcismo** — limpia la corrupción del repo con un comando
 - 🎨 **13 expresiones animadas** — incluyendo `panic`, `corrupt` y `deploy_friday`
 - 📊 **Panel con stats de sesión** — errores, warnings, builds, archivos, tiempo y nivel de estrés
@@ -35,6 +38,7 @@ Porque escribir código sin que alguien te diga que la regaste… no tiene graci
 - 🕐 **Contexto dinámico** — viernes 4pm y fines de semana activan frases de descanso
 - 🌙 **Eventos especiales** — coding nocturno, push a main, force push, merge conflicts
 - 🇲🇽 **100% en español mexicano** — con spanglish natural, sin filtros
+
 
 ---
 
@@ -116,6 +120,21 @@ Domingo: "DOMINGO de deploy. Xolito reza por ti."
 ```
 
 Modal de emergencia: **"Cancelar deploy"** / **"Vivir peligroso"**.
+
+---
+
+## 📊 Auditoría de Código Híbrida y Auto-Identificación
+
+Xolito te permite auditar cualquier fragmento de código seleccionándolo en el editor, haciendo clic derecho y eligiendo **"Evaluar Código Seleccionado"**:
+
+- **Estrategia Híbrida**: Si configuras tu clave API en `xolito.geminiApiKey`, Xolito evaluará tu código usando la **IA de Gemini 2.0**, devolviéndote un análisis detallado y una refactorización optimizada. Si estás offline o no tienes clave API, usará un **analizador local estático** basado en reglas.
+- **Rúbricas del Toolkit de Código Limpio**:
+  1. **Semántica**: Estilo y consistencia de idioma (¡fuera Spanglish en nombres!).
+  2. **Robustez**: Bloques try-catch vacíos, cast inseguros (`!!` en Kotlin).
+  3. **Modularidad**: Funciones extremadamente largas y pirámides de anidación.
+  4. **Documentación**: Presencia de comentarios descriptivos útiles en lógicas extensas.
+- **Refactorización con 1-Clic**: Si Gemini te propone un código más limpio, puedes aplicarlo directamente en tu editor de VS Code presionando **"APLICAR REFACTORIZACIÓN ✨"**.
+- **Auto-Identificación**: El evaluador identifica de forma automática el lenguaje (soporta TypeScript, JavaScript, Python, Kotlin, Java, C++, Rust, Go, C#, PHP y Ruby).
 
 ---
 
