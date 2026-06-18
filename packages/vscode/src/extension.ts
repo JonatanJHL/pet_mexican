@@ -166,7 +166,7 @@ const WEEKEND_RELAX_PHRASES = [
 ];
 
 // ── Linter Spanglish ──────────────────────────────────────────
-const SPANGLISH_PATTERNS = [
+export const SPANGLISH_PATTERNS = [
   /\bget_[a-z]*[A-Z]|\bfetch[_]?[A-ZÁÉÍÓÚÑ]/,
   /\b[a-z]+_[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+\b/,
   /\b(get|set|fetch|update|delete|create)[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+/,
@@ -515,6 +515,18 @@ function checkStress(): void {
   if (consecutiveErrors >= STRESS_THRESHOLD) {
     const p = STRESS_PHRASES[Math.floor(Math.random() * STRESS_PHRASES.length)];
     forcePhrase(p.text, p.mood);
+
+    // Alerta de fin de semana / viernes por la tarde
+    if (isFridayAfternoon() || isWeekend()) {
+      vscode.window.showErrorMessage(
+        '🚨 Xolito: ¡Mijo, cierra el IDE y vete por unos tacos y una chela antes de que rompas producción!',
+        'Cerrar VS Code', 'Vivir al límite'
+      ).then(sel => {
+        if (sel === 'Cerrar VS Code') {
+          vscode.commands.executeCommand('workbench.action.closeWindow');
+        }
+      });
+    }
   }
 }
 
@@ -566,16 +578,21 @@ function fireEvent(event: XolitoEvent, _detail?: string): void {
 
 function updateStatusBar(message: string): void {
   if (isPanicMode) return;
-  const icon = MOOD_ICONS[xolito.getMood()] ?? '🦎';
-  statusBar.text    = `${icon} ${message.length > 38 ? message.slice(0,35)+'...' : message}`;
-  statusBar.color   = MOOD_COLORS[xolito.getMood()];
+  const mood = xolito.getMood();
+  const icon = MOOD_ICONS[mood] ?? '🦎';
+  const stressVal = Math.min(consecutiveErrors, STRESS_THRESHOLD);
+  const stressMeter = stressVal === STRESS_THRESHOLD ? '🔥 5/5' : `🌡️ ${stressVal}/5`;
+  statusBar.text    = `${icon} [${stressMeter}] ${message.length > 38 ? message.slice(0,35)+'...' : message}`;
+  statusBar.color   = MOOD_COLORS[mood];
   statusBar.tooltip = `${message}\n\nClic para abrir Xolito`;
 }
 
 function updateStatusBarRaw(message: string, mood: XolitoMood): void {
   if (isPanicMode) return;
   const icon = MOOD_ICONS[mood] ?? '🦎';
-  statusBar.text    = `${icon} ${message.length > 38 ? message.slice(0,35)+'...' : message}`;
+  const stressVal = Math.min(consecutiveErrors, STRESS_THRESHOLD);
+  const stressMeter = stressVal === STRESS_THRESHOLD ? '🔥 5/5' : `🌡️ ${stressVal}/5`;
+  statusBar.text    = `${icon} [${stressMeter}] ${message.length > 38 ? message.slice(0,35)+'...' : message}`;
   statusBar.color   = MOOD_COLORS[mood];
   statusBar.tooltip = `${message}\n\nClic para abrir Xolito`;
 }

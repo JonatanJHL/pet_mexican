@@ -154,6 +154,19 @@ Xolito te permite auditar cualquier fragmento de código seleccionándolo en el 
 
 ---
 
+## 🚨 Linter Mexicano Inline & Termómetro de Estrés 🌡️
+
+Xolito ahora te cuida de forma más visible y directa:
+
+- **Advertencias Inline en Tiempo Real**: Xolito resalta y muestra comentarios graciosos sobre malas prácticas comunes en el editor:
+  - *Try-catch vacíos*: `"Try-catch vacío... ¿escondiendo tus pecados, mijo?"`
+  - *Casts Inseguros (`!!`)*: `"Cast inseguro (!!). Estás jugando con fuego, mijo."`
+  - *Variables en Spanglish*: `"Spanglish: Consistencia, elige un idioma."`
+- **Termómetro de Estrés en la Barra de Estado**: El indicador de la barra de estado ahora incluye tu nivel de estrés en tiempo real: `[🌡️ 0/5]` hasta `[🔥 5/5]`.
+- **Alerta de Descanso de Fin de Semana**: Si acumulas 5 errores seguidos un viernes por la tarde o en fin de semana, Xolito lanzará una alerta bloqueante invitándote a cerrar el editor para ir a descansar. Si aceptas, ¡él mismo cerrará la ventana por ti!
+
+---
+
 ## 💼 Modo Patrón — `Shift+Esc`
 
 ```

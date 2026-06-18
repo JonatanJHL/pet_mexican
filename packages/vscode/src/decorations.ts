@@ -6,6 +6,7 @@
 // ============================================================
 
 import * as vscode from 'vscode';
+import { SPANGLISH_PATTERNS } from './extension.js';
 
 const CONSOLE_PATTERNS: Record<string, RegExp> = {
   javascript:      /console\.log\s*\(/g,
@@ -202,6 +203,61 @@ export class XolitoDecorations {
           after: { contentText: `  🦎🧐 ${this.todoPhrase()}` },
         },
       });
+    }
+
+    // ── Try-Catch Vacíos (Linter Mexicano) ────────────────────
+    const EMPTY_CATCH_PATTERN = /catch\s*(?:\([^)]*\))?\s*\{\s*\}/g;
+    let catchMatch;
+    while ((catchMatch = EMPTY_CATCH_PATTERN.exec(text)) !== null) {
+      const pos     = doc.positionAt(catchMatch.index);
+      const lineNum = pos.line;
+      if (warningLines.has(lineNum)) continue;
+      warningLines.add(lineNum);
+      const end = doc.positionAt(catchMatch.index + catchMatch[0].length);
+      warningRanges.push({
+        range: new vscode.Range(pos, end),
+        renderOptions: {
+          after: { contentText: `  🦎💀 ${this.emptyCatchPhrase()}` },
+        },
+      });
+    }
+
+    // ── Cast Inseguro !! (Linter Mexicano) ────────────────────
+    const UNSAFE_CAST_PATTERN = /\b[a-zA-Z0-9_$]+!!/g;
+    let castMatch;
+    while ((castMatch = UNSAFE_CAST_PATTERN.exec(text)) !== null) {
+      const pos     = doc.positionAt(castMatch.index);
+      const lineNum = pos.line;
+      if (warningLines.has(lineNum)) continue;
+      warningLines.add(lineNum);
+      const end = doc.positionAt(castMatch.index + castMatch[0].length);
+      warningRanges.push({
+        range: new vscode.Range(pos, end),
+        renderOptions: {
+          after: { contentText: `  🦎💥 ${this.unsafeCastPhrase()}` },
+        },
+      });
+    }
+
+    // ── Spanglish en variables (Linter Mexicano) ──────────────
+    if (lang !== 'markdown') {
+      for (const pattern of SPANGLISH_PATTERNS) {
+        pattern.lastIndex = 0;
+        let spanglishMatch;
+        while ((spanglishMatch = pattern.exec(text)) !== null) {
+          const pos     = doc.positionAt(spanglishMatch.index);
+          const lineNum = pos.line;
+          if (warningLines.has(lineNum)) continue;
+          warningLines.add(lineNum);
+          const end = doc.positionAt(spanglishMatch.index + spanglishMatch[0].length);
+          warningRanges.push({
+            range: new vscode.Range(pos, end),
+            renderOptions: {
+              after: { contentText: `  🦎🌶️ Spanglish: Consistencia, elige un idioma.` },
+            },
+          });
+        }
+      }
     }
 
     editor.setDecorations(this.errorDecoration,   errorRanges);
@@ -437,5 +493,25 @@ export class XolitoDecorations {
       return "Te saliste de la fila de las tortillas. El índice que buscas está fuera del tamaño de la lista.";
     }
     return null;
+  }
+
+  private emptyCatchPhrase(): string {
+    const phrases = [
+      'Try-catch vacío... ¿escondiendo tus pecados, mijo?',
+      'Si ocurre un error aquí, nadie se va a enterar. Dios nos guarde.',
+      'Un catch vacío es como barrer la basura debajo de la alfombra.',
+      '¿Silenciando excepciones? Muy valiente de tu parte.',
+    ];
+    return phrases[Math.floor(Math.random() * phrases.length)];
+  }
+
+  private unsafeCastPhrase(): string {
+    const phrases = [
+      'Cast inseguro (!!). Estás jugando con fuego, mijo.',
+      'El compilador te lo advierte, pero tú de terco con el !!',
+      'Si eso llega nulo, todo explota. Prepárate.',
+      'NullPointerException en 3, 2, 1...',
+    ];
+    return phrases[Math.floor(Math.random() * phrases.length)];
   }
 }
