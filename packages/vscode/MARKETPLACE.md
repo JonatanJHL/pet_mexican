@@ -20,6 +20,7 @@ Porque escribir código sin que alguien te diga que la regaste… no tiene graci
 
 ## ✨ ¿Qué hace?
 
+- 🧪 **Pruebas de Escritorio (Dry Run)** — simula la ejecución paso a paso y rastro de variables de tus funciones con IA de Gemini en el panel lateral
 - 🔴 **Detecta errores LSP en tiempo real** — TypeScript, PHP, Python, Go, Rust, C#, Java y más
 - 📊 **Auditoría de Código Híbrida** — evalúa la calidad de tu código (Semántica, Robustez, Modularidad, Documentación) con score/10 y regaño de Xolito (offline con reglas locales, online con IA de Gemini 2.0)
 - ✨ **Refactorización con 1-Clic** — aplica las sugerencias de código limpio propuestas por la IA directo en tu editor activo
