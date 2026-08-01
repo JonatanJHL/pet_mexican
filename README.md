@@ -38,6 +38,8 @@ xolito/
 
 Xolito vive en tu editor, vigila tus advertencias LSP y compila tus archivos, reaccionando con animaciones y frases de humor mexicano:
 
+- 🧪 **Pruebas de Escritorio (Dry Run)**: Simula paso a paso la ejecución y rastro de variables de tus funciones en un panel lateral con IA de Gemini.
+- 📊 **Auditoría de Código Híbrida & Refactor 1-Clic**: Evalúa la calidad de tu código (Semántica, Robustez, Modularidad, Documentación) con score/10 y aplica refactorizaciones con un solo clic.
 - 🧠 **Traductor de Barrio**: Traduce los aburridos errores técnicos del compilador a modismos mexicanos divertidos en el hover del código.
 - 🔴 **Linter de Chambazos**: Detecta variables y funciones con nombres Spanglish mezclados (ej. `fetchUsuarios()`, `get_datos()`) y te invita a elegir un solo idioma.
 - 💀 **Sistema de Corrupción**: Cuantos más errores y compilaciones fallidas acumules, más se corrompe tu entorno. En niveles extremos (80%+), Xolito se vuelve "Poseído" (efecto glitch de temblor en pantalla).
