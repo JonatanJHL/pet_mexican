@@ -88,6 +88,29 @@ export const MOOD_OVERLAYS: Record<XolitoMood, string> = {
     <line x1="38" y1="52" x2="54" y2="54" stroke="#E8729A" stroke-width="2.5" stroke-linecap="round"/>
     <line x1="90" y1="52" x2="74" y2="54" stroke="#E8729A" stroke-width="2.5" stroke-linecap="round"/>
   </svg>`,
+
+  panic: `<svg class="emo" viewBox="0 0 128 128">
+    <circle cx="44" cy="54" r="6" fill="#A8FFB2"/>
+    <circle cx="84" cy="54" r="6" fill="#A8FFB2"/>
+    <path d="M44 76 Q64 64 84 76" stroke="#A8FFB2" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <text x="102" y="46" font-size="16" text-anchor="middle">💦</text>
+  </svg>`,
+
+  corrupt: `<svg class="emo" viewBox="0 0 128 128">
+    <path d="M42 78 L64 68 L86 78" stroke="#FF2222" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <line x1="34" y1="46" x2="54" y2="60" stroke="#FF2222" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="94" y1="46" x2="74" y2="60" stroke="#FF2222" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="44" cy="58" r="5" fill="#FF2222"/>
+    <circle cx="84" cy="58" r="5" fill="#FF2222"/>
+    <text x="64" y="32" font-size="18" text-anchor="middle">👹</text>
+  </svg>`,
+
+  deploy_friday: `<svg class="emo" viewBox="0 0 128 128">
+    <path d="M40 76 Q64 90 88 76" stroke="#FF6600" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <circle cx="44" cy="54" r="5" fill="#FF6600"/>
+    <circle cx="84" cy="54" r="5" fill="#FF6600"/>
+    <text x="64" y="30" font-size="20" text-anchor="middle">🔥</text>
+  </svg>`,
 };
 
 // CSS para el widget del spritesheet

@@ -13,6 +13,7 @@ import { DiagnosticsWatcher } from './diagnostics-watcher.js';
 import { XolitoDecorations } from './decorations.js';
 import { CorruptionWatcher } from './corruption-watcher.js';
 import type { FileWithErrors } from './corruption-watcher.js';
+import { XolitoDryRunProvider } from './dryrun-provider.js';
 
 // ── Frases de corrupción ──────────────────────────────────
 const CORRUPTION_PHRASES: Record<string, string[]> = {
@@ -165,11 +166,10 @@ const WEEKEND_RELAX_PHRASES = [
   { text: "¿No tienes algo mejor que hacer un domingo?",                mood: 'sassy'   as XolitoMood },
 ];
 
-// ── Linter Spanglish ──────────────────────────────────────────
 export const SPANGLISH_PATTERNS = [
-  /\bget_[a-z]*[A-Z]|\bfetch[_]?[A-ZÁÉÍÓÚÑ]/,
-  /\b[a-z]+_[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+\b/,
-  /\b(get|set|fetch|update|delete|create)[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+/,
+  /\b(get|set|fetch|update|delete|create)_(?!data|user|status|config|settings|error|event|file|info|text|name|id|token|key|url|path|type|result|response|request|headers|body|query|schema|d1|db|ai|model|version|friday|friday_danger|late_night|junior_errors|merge_hero|no_commits|limpiador|terco|lateNight|juniorErrors|mergeHero|noCommits|exorcised)[a-záéíóúñA-ZÁÉÍÓÚÑ_]+\b/,
+  /\b(get|set|fetch|update|delete|create)(?:[A-ZÁÉÍÓÚÑ][a-z]*)*(?:Usuario|Cliente|Datos|Articulo|Nombre|Direccion|Factura|Precio|Fecha|Empresa|Configuracion|Estado|Firma|Comentario|Mensaje|Detalle|Lista|Fila|Columna|Tabla|Base|Archivo|Imagen|Texto|Error|Excepcion|Fase|Logro|Medalla|Ficha|Lote|Grupo|Cuenta|Clave|Contraseña|Perfil|Rol|Skin|Rebote|Fisica|Alerta|Notificacion|Calendario|Evento|Recordatorio|Tarea|Chambazo|Linter|Termometro|Estres|Barrio|Suicid|Viernes|[a-zA-Z]*[áéíóúñ])[a-zA-Z]*/i,
+  /\b[a-z]+_[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+\b/
 ];
 
 const SPANGLISH_PHRASES = [
@@ -311,7 +311,9 @@ export function activate(context: vscode.ExtensionContext): void {
   });
   corruptionWatcher.start();
 
+  const dryRunProvider = new XolitoDryRunProvider(context.extensionUri);
   context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(XolitoDryRunProvider.viewType, dryRunProvider),
     vscode.commands.registerCommand('xolito.show',        showPanel),
     vscode.commands.registerCommand('xolito.greet',       () => fireEvent('greeted')),
     vscode.commands.registerCommand('xolito.toggle',      toggleDecorations),
@@ -694,6 +696,24 @@ function showPanel(): void {
   updatePanel();
 }
 
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function getNonce(): string {
+  let text = '';
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 32; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
+}
+
 function getSpriteUri(mood: XolitoMood): string {
   if (!panel || !extContext) return '';
   for (const c of [`assets/xolito_${mood}.png`, 'assets/xolito_idle.png']) {
@@ -712,6 +732,8 @@ function updatePanel(): void {
   const errors    = xolito.getErrorCount();
   const counts    = diagWatcher.getCurrentCounts();
   const phrase    = lastPhrase;
+  const phraseEscaped = escapeHtml(phrase);
+  const nonce     = getNonce();
   const spriteUrl = getSpriteUri(mood);
   const mc        = MOOD_COLORS[mood] ?? '#4ec9b0';
   const corrupt   = isCurrentlyExorcised ? { level: 0, tier: 'clean' as const, glitchText: false, redEyes: false, screenShake: false } : currentCorruption;
@@ -751,7 +773,7 @@ function updatePanel(): void {
   panel.webview.html = `<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy"
-  content="default-src 'none';img-src ${panel.webview.cspSource} data:;style-src 'unsafe-inline';script-src 'unsafe-inline';">
+  content="default-src 'none';img-src ${panel.webview.cspSource} data:;style-src 'unsafe-inline';script-src 'nonce-${nonce}';">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Segoe UI',sans-serif;background:${panelBg};color:#d4d4d4;
@@ -795,7 +817,7 @@ function updatePanel(): void {
       : `<div style="font-size:100px;line-height:1;${spriteAnim}">🦎</div>`}
   </div>
   <div class="badge">${mood}</div>
-  <div class="phrase">"${phrase}"</div>
+  <div class="phrase">"${phraseEscaped}"</div>
 
   <div class="section-title">Ahora mismo</div>
   <div class="stats">
@@ -831,7 +853,7 @@ function updatePanel(): void {
     <div class="corrupt-files">
       ${corruptionWatcher.getFilesWithErrors().map(f => `
         <div class="corrupt-file">
-          <span class="corrupt-file-name" title="${f.name}">${f.name.split('/').pop()}</span>
+          <span class="corrupt-file-name" title="${escapeHtml(f.name)}">${escapeHtml(f.name.split('/').pop() || '')}</span>
           <span class="corrupt-file-count">${f.errors} err</span>
         </div>
       `).join('')}
@@ -968,7 +990,7 @@ function updatePanel(): void {
     @keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
   </style>
 
-  <script>
+  <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     
     function exorcise() {

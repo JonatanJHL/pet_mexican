@@ -264,7 +264,8 @@ pnpm test           # 52 tests
 
 ## 📱 También en Android
 
-Próximamente en Google Play — Xolito reacciona a tus notificaciones de WhatsApp. 7 personalidades y respuestas automáticas con IA.
+**¡Ya disponible en Google Play Store!**  
+Xolito reacciona a tus notificaciones de WhatsApp en tiempo real usando IA (Gemini). Configura personalidades personalizadas para tus contactos, desbloquea skins premium y mantén el humor mexicano directo en tu celular.
 
 ---
 

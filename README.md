@@ -1,277 +1,138 @@
 <div align="center">
 
-# 🦎 Xolito
+# 🦎 Xolito Monorepo
 
 <img src="packages/vscode/assets/xolito_idle.png" width="120" alt="Xolito idle"/>
 
 > *"Aquí estoy, cuidándote... y juzgándote con cariño."*
 
-**Tu ajolote regañón para VS Code.**  
-Regañón. Tierno. Sarcástico. 100% mexicano. 0% filtro.
+**Tu mascota virtual de ajolote regañón, sarcástico y 100% mexicano.**  
+Este repositorio unificado contiene la extensión para VS Code, la aplicación móvil para Android y la página web comunitaria.
 
-![CI](https://github.com/JonatanJHL/pet_mexican/actions/workflows/ci.yml/badge.svg)
-![License](https://img.shields.io/badge/license-Dual%20License-orange)
-![Made in Mexico](https://img.shields.io/badge/Hecho%20en-México%20🇲🇽-green)
-![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
-![Version](https://img.shields.io/visual-studio-marketplace/v/xolito.xolito-vscode?label=Marketplace)
-
-</div>
-
----
-
-## ¿Qué es Xolito?
-
-Xolito es una mascota virtual inspirada en el **ajolote mexicano** (*Ambystoma mexicanum*) — la especie endémica de México que nunca termina de madurar. Igual que nuestro código.
-
-Vive en tu VS Code, detecta errores en tiempo real via LSP y te regaña con cariño en español mexicano.
-
----
-
-## 🎭 Moods
-
-<div align="center">
-
-| | | | | | |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-| <img src="packages/vscode/assets/xolito_idle.png" width="72"/><br>**idle** | <img src="packages/vscode/assets/xolito_happy.png" width="72"/><br>**happy** | <img src="packages/vscode/assets/xolito_mad.png" width="72"/><br>**mad** | <img src="packages/vscode/assets/xolito_sassy.png" width="72"/><br>**sassy** | <img src="packages/vscode/assets/xolito_worried.png" width="72"/><br>**worried** | <img src="packages/vscode/assets/xolito_panic.png" width="72"/><br>**panic** |
-| <img src="packages/vscode/assets/xolito_corrupt.png" width="72"/><br>**corrupt** | | | | | |
+[![Hecho en México](https://img.shields.io/badge/Hecho%20en-México%20🇲🇽-green)](#)
+[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](#)
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/xolito.xolito-vscode?label=VS%20Code%20Marketplace)](https://marketplace.visualstudio.com)
+[![Licencia](https://img.shields.io/badge/license-Dual%20License-orange)](#)
 
 </div>
 
 ---
 
-## ✨ Features
+## 📂 Estructura del Monorepo
 
-- 🔴 **Detecta errores LSP en tiempo real** — TypeScript, PHP, Python, Go, Rust, C#, Java
-- 📊 **Auditoría de Código Híbrida** — evalúa la calidad de tu código (Semántica, Robustez, Modularidad, Documentación) con score/10 y regaño de Xolito (offline con reglas locales, online con IA de Gemini 2.0)
-- ✨ **Refactorización con 1-Clic** — aplica las sugerencias de código limpio propuestas por la IA directo en tu editor activo
-- 🔍 **Auto-Identificación de Lenguajes** — detecta automáticamente el lenguaje de programación en el editor o en el panel (soporta TS, JS, Python, Kotlin, Java, C++, Rust, Go, C#, PHP y Ruby)
-- 🧠 **Traductor de Barrio** — traduce errores técnicos a español mexicano con hover
-- 💬 **Comentarios inline con rotación** — frases distintas por tipo de error, sin repetirse
-- 🏆 **Sistema de Logros** — 7 badges desbloqueables por tus hábitos reales de código (ahora agrupados en un panel colapsable para optimizar espacio)
-- 🔮 **Exorcismo** — ritual animado para limpiar la corrupción del repo
-- 🎨 **13 sprites por mood** — incluyendo `panic`, `corrupt` y `deploy_friday`
-- 📊 **Panel con stats de sesión** — errores, warnings, builds, archivos, tiempo y estrés
-- 💀 **Sistema de Corrupción** — el repo acumula corrupción según errores LSP y builds fallidos
-- 🔥 **Deploy Suicida** — detecta deploys en viernes/sábado/domingo y activa la alarma
-- 💼 **Modo Patrón** (`Shift+Esc`) — camufla tu pantalla cuando llega el jefe
-- 🌶️ **Linter de Chambazos** — detecta spanglish en nombres (`fetchUsuarios`, `get_datos`)
-- 📈 **Sistema de estrés** — 5+ errores seguidos escalan el sarcasmo automáticamente
-- 🕐 **Contexto dinámico** — viernes 4pm y fines de semana activan frases especiales
-- 🌙 **Eventos especiales** — coding nocturno, push a main, force push, merge conflicts
-- 🇲🇽 **100% mexicano** — frases en español con spanglish natural
-
-
----
-
-## 🧠 Traductor de Barrio
-
-Xolito traduce los errores del compilador a español mexicano. Aparece al hacer hover sobre el error:
-
-```
-Error: Type 'number' is not assignable to type 'string'
-🦎 "Estás intentando meter una caguama en un vaso tequilero. No va a caber, mijo."
-
-Error: Cannot find name 'fetchUsuarios'
-🦎 "¿Y esa variable de dónde salió? Es como buscar al taquero un lunes: no existe."
-
-Error: Object is possibly 'null'
-🦎 "Eso podría venir más vacío que tu cartera en fin de quincena."
-```
-
----
-
-## 🏆 Sistema de Logros
-
-7 badges desbloqueables según tus hábitos reales:
-
-| Badge | Emoji | Cómo ganarlo |
-|-------|-------|-------------|
-| La Noche es Joven | 🦉 | Programar entre 3am y 5am |
-| Junior de Corazón | 👶 | Acumular 10+ errores simultáneos |
-| Héroe Nacional | ⚔️ | Resolver un merge conflict |
-| Viernes de Peligro | 🌶️ | Compilar un viernes después de las 3pm |
-| ¿Qué es un Commit? | 💾 | Guardar 50 veces sin hacer commit |
-| El Limpiador | 🧹 | Borrar 100+ líneas de un golpe |
-| El Terco | 🐂 | Guardar el mismo archivo roto 5 veces seguidas |
-
----
-
-## 💀 Sistema de Corrupción
-
-Xolito monitorea el estado real de tu workspace usando diagnósticos LSP:
-
-| Nivel | Tier | Efecto |
-|-------|------|--------|
-| 0–19% | ✓ Limpio | Todo normal |
-| 20–49% | 🟡 Advertencia | Barra amarilla |
-| 50–79% | ⚠️ Crítico | Barra roja, archivos culpables visibles |
-| 80–100% | 👹 Poseído | Glitch, ojos rojos, panel tiembla |
-
-El panel muestra los **archivos responsables** con su conteo de errores. Al corregirlos la barra baja automáticamente. El historial se guarda en `xolito-health.json` en la raíz del proyecto.
-
-Para un reset rápido: `Cmd+Shift+P` → **Exorcismo 🔮**
-
----
-
-## 🔮 Exorcismo
-
-Cuando el repo está poseído, aparece el botón **🔮 REALIZAR EXORCISMO** en el panel.
-
-El ritual incluye:
-- Defumación con copal digital 🌿
-- Agua bendita al `package.json` 💧
-- 3 Padre Nuestros al servidor de producción 💻
-- Emojis flotando en la pantalla ✨
-
----
-
-## 🔥 Deploy Suicida
-
-Detecta deploys en **viernes, sábado y domingo** con frases específicas por día:
-
-```
-Viernes: "NO SE HACE DEPLOY EN VIERNES. NUNCA. JAMÁS."
-Sábado:  "¿DEPLOY EN SÁBADO? ¿En serio, mijo?"
-Domingo: "DOMINGO de deploy. Xolito reza por ti."
-```
-
-Modal de emergencia: **"Cancelar deploy"** / **"Vivir peligroso"**.
-
----
-
-## 📊 Auditoría de Código Híbrida y Auto-Identificación
-
-Xolito te permite auditar cualquier fragmento de código seleccionándolo en el editor, haciendo clic derecho y eligiendo **"Evaluar Código Seleccionado"**:
-
-- **Estrategia Híbrida**: Si configuras tu clave API en `xolito.geminiApiKey`, Xolito evaluará tu código usando la **IA de Gemini 2.0**, devolviéndote un análisis detallado y una refactorización optimizada. Si estás offline o no tienes clave API, usará un **analizador local estático** basado en reglas.
-- **Rúbricas del Toolkit de Código Limpio**:
-  1. **Semántica**: Estilo y consistencia de idioma (¡fuera Spanglish en nombres!).
-  2. **Robustez**: Bloques try-catch vacíos, cast inseguros (`!!` en Kotlin).
-  3. **Modularidad**: Funciones extremadamente largas y pirámides de anidación.
-  4. **Documentación**: Presencia de comentarios descriptivos útiles en lógicas extensas.
-- **Refactorización con 1-Clic**: Si Gemini te propone un código más limpio, puedes aplicarlo directamente en tu editor de VS Code presionando **"APLICAR REFACTORIZACIÓN ✨"**.
-- **Auto-Identificación**: El evaluador identifica de forma automática el lenguaje (soporta TypeScript, JavaScript, Python, Kotlin, Java, C++, Rust, Go, C#, PHP y Ruby).
-
----
-
-## 💼 Modo Patrón — `Shift+Esc`
-
-```
-Antes:   🦎 Compiló limpio. Tu mamá estaría orgullosa.
-Después: 💼 [PROD] cluster_matrix_balancer.cpp
-```
-
-Abre C++ con templates, mutex y operaciones atómicas. `Shift+Esc` de nuevo regresa exactamente donde estabas.
-
----
-
-## 📦 Instalación
-
-### VS Code Marketplace
-
-```
-ext install xolito.xolito-vscode
-```
-
-### Desde código fuente
-
-```bash
-git clone https://github.com/JonatanJHL/pet_mexican.git xolito
-cd xolito && pnpm install
-cd packages/core && pnpm exec tsc
-cd ../vscode && node build.mjs
-# F5 en VS Code para lanzar
-```
-
----
-
-## 💬 Frases de ejemplo
-
-```
-🧠 Traductor de barrio (hover sobre error):
-  "Le estás pidiendo limones al árbol de aguacates."
-
-👹 Repo poseído:
-  "X̷o̸l̴i̷t̸o̵ ̵e̸s̷t̴á̷ ̵a̶q̵u̵í̸..."
-  "ALIMENTASTE DEMASIADOS BUGS."
-
-🔥 Deploy en viernes:
-  "Histórico: 94% de los deploys del viernes rompen prod."
-
-💼 Modo Patrón:
-  "¡Disimula! ¡Ponte a leer código denso!"
-
-🌶️ Spanglish detectado:
-  "fetchUsuarios. Mijo, elige un idioma."
-
-😤 5+ errores seguidos:
-  "El compilador te odia hoy. Respira."
-
-🍺 Viernes 4pm:
-  "Viernes 4pm. Cierra el IDE y agarra una chela."
-
-🌙 Coding nocturno:
-  "Son las 11pm y sigues aquí. Tu cama también te quiere."
-```
-
----
-
-## 🗂 Estructura
+Este es un proyecto multipaquete gestionado con `pnpm`:
 
 ```
 xolito/
 ├── packages/
-│   ├── core/
-│   │   └── src/
-│   │       ├── phrases.ts           ← banco de frases por evento
-│   │       ├── corruption.ts        ← sistema de corrupción
-│   │       ├── types.ts             ← 13 moods y eventos
-│   │       └── sprites/generator.ts ← generador SVG por mood
-│   ├── vscode/
-│   │   ├── assets/                  ← sprites PNG por mood
-│   │   └── src/
-│   │       ├── extension.ts         ← core, logros, exorcismo, deploy suicida
-│   │       ├── corruption-watcher.ts← monitor LSP + health.json
-│   │       └── decorations.ts       ← inline + traductor de barrio
-│   └── claude-code/                 ← plugin de terminal (WIP)
+│   ├── core/              ← Lógica común, sprites SVG y base de frases
+│   ├── vscode/            ← Extensión para VS Code (LSP watcher, logros, exorcismo)
+│   └── android/           ← Aplicación Android (Kotlin, Jetpack Compose, Gemini IA, Widget)
+├── importar/              ← Plataforma web para previsualizar e importar skins/moods
 └── README.md
 ```
 
 ---
 
-## 🤝 Contribuir frases
+## 💻 1. Extensión para VS Code (`packages/vscode`)
 
-- **`packages/core/src/phrases.ts`** — notificaciones y panel
-- **`packages/vscode/src/decorations.ts`** — inline + traductor de barrio
+Xolito vive en tu editor, vigila tus advertencias LSP y compila tus archivos, reaccionando con animaciones y frases de humor mexicano:
 
-**Reglas:** máx 100 chars · sarcasmo con cariño · español mexicano · mood correcto
+- 🧠 **Traductor de Barrio**: Traduce los aburridos errores técnicos del compilador a modismos mexicanos divertidos en el hover del código.
+- 🔴 **Linter de Chambazos**: Detecta variables y funciones con nombres Spanglish mezclados (ej. `fetchUsuarios()`, `get_datos()`) y te invita a elegir un solo idioma.
+- 💀 **Sistema de Corrupción**: Cuantos más errores y compilaciones fallidas acumules, más se corrompe tu entorno. En niveles extremos (80%+), Xolito se vuelve "Poseído" (efecto glitch de temblor en pantalla).
+- 🔮 **Exorcismo**: Un ritual animado completo con copal digital y agua bendita para limpiar el estado de corrupción del repositorio.
+- 🏆 **Sistema de Logros**: Medallas desbloqueables basadas en tus hábitos de desarrollo reales (ej. "Viernes de Peligro" por compilar después de las 3:00 PM los viernes).
+- 💼 **Modo Patrón** (`Shift + Esc`): Camufla tu editor abriendo un archivo de código C++ denso empresarial si ves acercarse a tu jefe.
 
+### Instalación de la Extensión
+Busca **Xolito** en la barra de extensiones de VS Code o instálalo por terminal:
 ```bash
-pnpm test           # 52 tests
-pnpm test:coverage  # con cobertura
+ext install xolito.xolito-vscode
 ```
 
 ---
 
-## 📱 También en Android
+## 📱 2. Aplicación Móvil Android (`packages/android`)
 
-Próximamente en Google Play — Xolito reacciona a tus notificaciones de WhatsApp. 7 personalidades y respuestas automáticas con IA.
+La aplicación oficial de Xolito que reacciona a tus notificaciones reales de WhatsApp y WhatsApp Business utilizando inteligencia artificial de **Gemini** (a través de OpenRouter) u offline:
+
+- 💬 **Burbuja Flotante Contextual (Overlay)**: Muestra el mensaje recibido del remitente y la sugerencia de respuesta sarcástica de Xolito en una burbuja de baja latencia con tipografía temática según tu aspecto activo.
+- 🎭 **Creador de Personalidades (Moods)**: Define respuestas offline para roles predeterminados (Papá, Mamá, Tóxic@, Cobrador, Jefe, Ex, Amigo).
+- 📊 **Dashboard de Sarcasmo & Sarcasmo Wrapped**: Visualiza gráficos de barras de toxicidad acumulados e imprime un reporte completo en vertical (9:16) con márgenes protectores diseñado para tus estados de WhatsApp o Stories.
+- 🧩 **Widget Interactivo de Pantalla de Inicio**: Un widget en tu home que lee tu skin y muestra respuestas basadas en el rol del último mensaje de WhatsApp.
+- 💎 **Regla PRO**: Permite crear/importar hasta 2 elementos personalizados en el plan gratuito; activa la suscripción PRO (o activa el botón **Bypass Dev** en depuración) para desbloquear personalizaciones ilimitadas.
+
+---
+
+## 🌐 3. Landing Page de Importación (`importar/`)
+
+Una página web ligera y optimizada para servir de puente y previsualizador comunitario de las skins y personalidades compartidas:
+
+- 🎨 **Renderizado Dinámico de Pixel Art**: Lee la query param de 256 caracteres de la URL y la dibuja sobre un `<canvas>` HTML5 escalado a 12x con la paleta oficial.
+- 🎭 **Previsualizador de Moods**: Carga el emoji e imprime la lista de frases custom de forma ordenada en tarjetas animadas.
+- 🚀 **Deep Linking Directo**: Un botón "Importar en Xolito App" que invoca el esquema URI `xolito://importar?...` para abrir directamente la app instalada en Android y disparar el popup de confirmación.
+- 💸 **Monetización con Google AdSense**: Contenedor e instrucciones CSS/HTML listas para insertar tu script de anuncios automáticos y monetizar cada visita.
+- ⏳ **Temporizador de Redirección Inteligente**: Hace una cuenta atrás de 6 segundos antes de enviar al usuario a Google Play, ofreciendo la opción de "Pausar" para permitirle revisar la skin.
+
+---
+
+## 🚀 Despliegue Gratuito de la Landing Page
+
+Para que tus usuarios puedan visualizar e importar skins/moods compartidos, debes subir la carpeta `/importar` a internet. Te recomendamos usar **GitHub Pages**:
+
+1. Sube tu monorepo a tu perfil de GitHub.
+2. Ve a la pestaña **Settings** (Ajustes) de tu repositorio.
+3. En el menú lateral izquierdo, haz clic en **Pages**.
+4. En la sección *Build and deployment*, selecciona la rama principal (`main` o `master`) y la carpeta raíz.
+5. Guarda los cambios. GitHub te proporcionará una URL gratuita (ej. `https://tu-usuario.github.io/xolito2/importar/index.html`).
+6. Abre `packages/android/app/src/main/java/com/jonatanjhl/xolito/MainActivity.kt` y cambia el valor de la constante `BASE_SHARE_URL` por tu dirección de GitHub Pages:
+   ```kotlin
+   const val BASE_SHARE_URL = "https://tu-usuario.github.io/xolito2/importar"
+   ```
+7. ¡Compila de nuevo tu app de Android y listo!
+
+---
+
+## 🛠️ Guía de Desarrollo Local
+
+Si deseas compilar el código fuente del monorepo en tu entorno de desarrollo:
+
+### Requisitos Previos
+* Node.js v18+ y `pnpm` (`npm install -g pnpm`)
+* Java JDK 17+ (para el subproyecto Android)
+* Android SDK y Gradle (integrados por Android Studio)
+
+### Instalación de Dependencias
+```bash
+pnpm install
+```
+
+### Compilar Extensión de VS Code
+```bash
+cd packages/core && pnpm exec tsc
+cd ../vscode && node build.mjs
+# Abre packages/vscode en VS Code y presiona F5 para depurar
+```
+
+### Compilar y Validar Aplicación de Android
+```bash
+cd packages/android
+./gradlew compileDebugKotlin    # Compilación de Kotlin
+./gradlew test                  # Ejecutar suite de pruebas de Mockito
+./gradlew assembleDebug         # Generar APK de depuración
+```
 
 ---
 
 ## 📄 Licencia
 
-Licencia dual — uso personal libre, uso comercial requiere acuerdo.
+Licencia Dual — uso personal educativo libre. El uso comercial o de distribución monetizada en tiendas públicas requiere una licencia autorizada por el autor.
 
 📩 jonatanhidalgoledesma@gmail.com
 
----
-
 <div align="center">
-
-*Hecho con 🦎 y mucho café en México*
-
-<img src="packages/vscode/assets/xolito_sheet.png" width="300" alt="Xolito character sheet"/>
-
+  <img src="packages/vscode/assets/xolito_sheet.png" width="350" alt="Xolito character sheet"/>
+  <br>
+  <em>Hecho con 🦎, ☕ y mucho sarcasmo en México</em>
 </div>

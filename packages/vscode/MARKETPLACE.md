@@ -184,7 +184,8 @@ C++ con templates, mutex y operaciones atómicas. `Shift+Esc` de nuevo regresa e
 
 ## 📱 Xolito también en Android
 
-Próximamente en Google Play — reacciona a tus notificaciones de WhatsApp según quién te escribe. 7 personalidades y respuestas automáticas con IA.
+**¡Ya disponible en Google Play Store!**  
+Xolito reacciona a tus notificaciones de WhatsApp en tiempo real usando IA (Gemini). Configura personalidades personalizadas para tus contactos, desbloquea skins premium y mantén el humor mexicano directo en tu celular.
 
 ---
 
