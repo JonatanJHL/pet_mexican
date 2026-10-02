@@ -18,6 +18,8 @@ Porque escribir código sin que alguien te diga que la regaste… no tiene graci
 
 ---
 
+> **🆕 v1.5.1:** VS Code ya no se congela con el linter de Spanglish, el linter dejó de regañar por nombres en inglés puro, y Deploy Suicida + detección de commits ya funcionan en la versión publicada. Detalle en el [Changelog](https://github.com/JonatanJHL/pet_mexican/blob/main/packages/vscode/CHANGELOG.md).
+
 ## ✨ ¿Qué hace?
 
 - 🧪 **Pruebas de Escritorio (Dry Run)** — simula la ejecución paso a paso y rastro de variables de tus funciones con IA de Gemini en el panel lateral
