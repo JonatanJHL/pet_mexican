@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { Xolito, evaluateCodeOffline, evaluateCodeWithGemini } from '@xolito/core';
+import { Xolito, evaluateCodeOffline, evaluateCodeWithGemini, hasSpanglish } from '@xolito/core';
 import type { XolitoEvent, XolitoMood, CodeEvaluationResult } from '@xolito/core';
 import { glitchText } from '@xolito/core';
 import type { CorruptionState } from '@xolito/core';
@@ -51,6 +51,14 @@ let lastEvaluationResult: CodeEvaluationResult | undefined;
 let lastSelectedText: string = "";
 let lastSelectedEditor: vscode.TextEditor | undefined;
 let lastSelectedRange: vscode.Range | undefined;
+let lastEvaluatedText = '';
+
+// ── Webview: handshake y cola de mensajes ────────────────────
+// Un postMessage enviado antes de que cargue el script se pierde.
+let panelReady = false;
+const pendingPanelMessages: unknown[] = [];
+let exorcismAnimating = false;
+let lastCorruptionSignature = '';
 
 // ── Sistema de Logros ─────────────────────────────────────────
 const BADGES_LIST = [
@@ -164,12 +172,6 @@ const WEEKEND_RELAX_PHRASES = [
   { text: "Domingo de código. Tu cuerpo merece descanso, mijo.",        mood: 'worried' as XolitoMood },
   { text: "Finde programando. Tu therapist no aprueba, yo tampoco.",    mood: 'judging' as XolitoMood },
   { text: "¿No tienes algo mejor que hacer un domingo?",                mood: 'sassy'   as XolitoMood },
-];
-
-export const SPANGLISH_PATTERNS = [
-  /\b(get|set|fetch|update|delete|create)_(?!data|user|status|config|settings|error|event|file|info|text|name|id|token|key|url|path|type|result|response|request|headers|body|query|schema|d1|db|ai|model|version|friday|friday_danger|late_night|junior_errors|merge_hero|no_commits|limpiador|terco|lateNight|juniorErrors|mergeHero|noCommits|exorcised)[a-záéíóúñA-ZÁÉÍÓÚÑ_]+\b/,
-  /\b(get|set|fetch|update|delete|create)(?:[A-ZÁÉÍÓÚÑ][a-z]*)*(?:Usuario|Cliente|Datos|Articulo|Nombre|Direccion|Factura|Precio|Fecha|Empresa|Configuracion|Estado|Firma|Comentario|Mensaje|Detalle|Lista|Fila|Columna|Tabla|Base|Archivo|Imagen|Texto|Error|Excepcion|Fase|Logro|Medalla|Ficha|Lote|Grupo|Cuenta|Clave|Contraseña|Perfil|Rol|Skin|Rebote|Fisica|Alerta|Notificacion|Calendario|Evento|Recordatorio|Tarea|Chambazo|Linter|Termometro|Estres|Barrio|Suicid|Viernes|[a-zA-Z]*[áéíóúñ])[a-zA-Z]*/i,
-  /\b[a-z]+_[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+\b/
 ];
 
 const SPANGLISH_PHRASES = [
@@ -307,9 +309,16 @@ export function activate(context: vscode.ExtensionContext): void {
       unlockBadge('junior_errors', 'Junior de Corazón', '¡Ajúa! 10 errores seguidos. Te recomiendo apagar la computadora y respirar aire fresco.', 'mad');
     }
 
-    if (panel) updatePanel();
-  });
+    // Solo re-renderiza si cambió algo visible (antes: en cada diagnóstico)
+    const sig = `${state.level}|${state.tier}|${factors.errorCount}|${factors.consecutiveFails}|` +
+      corruptionWatcher.getFilesWithErrors().map(f => f.name + ':' + f.errors).join(',');
+    if (sig !== lastCorruptionSignature) {
+      lastCorruptionSignature = sig;
+      if (panel) updatePanel();
+    }
+  }, context.storageUri?.fsPath);
   corruptionWatcher.start();
+  watchGitCommits(context);
 
   const dryRunProvider = new XolitoDryRunProvider(context.extensionUri);
   context.subscriptions.push(
@@ -326,6 +335,9 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.tasks.onDidEndTaskProcess(onTaskEnd),
     vscode.window.onDidChangeTextEditorSelection(() => resetIdleTimer()),
     vscode.workspace.onDidChangeTextDocument((e) => {
+      // Los canales de Output/logs también disparan este evento: solo cuentan archivos reales
+      if (e.document.uri.scheme !== 'file' && e.document.uri.scheme !== 'untitled') return;
+      if (e.contentChanges.length === 0) return;
       isCurrentlyExorcised = false;
       resetIdleTimer();
 
@@ -345,12 +357,16 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
-  try {
-    const td = (vscode.window as any).onDidWriteTerminalData(
-      (e: { data: string }) => onTerminalData(e.data)
-    );
-    if (td) context.subscriptions.push(td);
-  } catch (_) {}
+  // onDidWriteTerminalData es API propuesta: en la extensión publicada no existe y
+  // todo lo de terminal (deploy, push, npm install) nunca se disparaba.
+  // onDidStartTerminalShellExecution es estable desde VS Code 1.93 (requiere shell integration).
+  const onShellExec = (vscode.window as any).onDidStartTerminalShellExecution;
+  if (typeof onShellExec === 'function') {
+    context.subscriptions.push(onShellExec((e: any) => {
+      const cmd = e?.execution?.commandLine?.value;
+      if (typeof cmd === 'string' && cmd.trim()) onTerminalData(cmd);
+    }));
+  }
 
   fireEvent('greeted');
   resetIdleTimer();
@@ -415,14 +431,10 @@ function onSave(doc: vscode.TextDocument): void {
     unlockBadge('merge_hero', 'Héroe Nacional', 'Resolviste un conflicto sin romper la base. Ya te ganaste tu sombrero de charro honorario.', 'proud');
   }
 
-  if (doc.languageId !== 'markdown') {
-    for (const pattern of SPANGLISH_PATTERNS) {
-      if (pattern.test(text)) {
-        const p = SPANGLISH_PHRASES[Math.floor(Math.random() * SPANGLISH_PHRASES.length)];
-        forcePhrase(p.text, p.mood);
-        return;
-      }
-    }
+  if (doc.languageId !== 'markdown' && hasSpanglish(text)) {
+    const p = SPANGLISH_PHRASES[Math.floor(Math.random() * SPANGLISH_PHRASES.length)];
+    forcePhrase(p.text, p.mood);
+    return;
   }
   if (/console\.log/.test(text))      { fireEvent('console_log_left'); return; }
   if (/\/\/\s*TODO/i.test(text))      { fireEvent('todo_comment');     return; }
@@ -464,8 +476,8 @@ function onTerminalData(data: string): void {
     }
   }
   if (/git push.*--force/i.test(data))                      fireEvent('git_force_push');
-  else if (/git push.*origin (main|master)/i.test(data))  { corruptionWatcher.reportCommit(); consecutiveSavesWithoutCommit = 0; fireEvent('push_to_main'); }
-  else if (/git commit/i.test(data))                      { corruptionWatcher.reportCommit(); consecutiveSavesWithoutCommit = 0; }
+  else if (/git push.*origin (main|master)/i.test(data))  fireEvent('push_to_main');
+  else if (/git commit/i.test(data))                      onCommitDetected();
   else if (/npm install|pnpm install|yarn add/i.test(data)) fireEvent('npm_install');
   else if (/CONFLICT \(content\)/i.test(data))              fireEvent('merge_conflict');
   const h = new Date().getHours(), dow = new Date().getDay();
@@ -553,7 +565,45 @@ function forcePhrase(text: string, mood: XolitoMood): void {
 
 function resetIdleTimer(): void {
   if (idleTimer) clearTimeout(idleTimer);
-  idleTimer = setTimeout(() => { const ev = xolito.checkIdle(); if (ev) fireEvent(ev); }, 600000);
+  // Antes el timer no se re-armaba y idle_30min nunca se disparaba
+  idleTimer = setTimeout(() => {
+    fireEvent('idle_10min');
+    idleTimer = setTimeout(() => fireEvent('idle_30min'), 20 * 60 * 1000);
+  }, 10 * 60 * 1000);
+}
+
+// ── Commits reales vía la extensión de Git de VS Code ─────────
+function onCommitDetected(): void {
+  corruptionWatcher.reportCommit();
+  consecutiveSavesWithoutCommit = 0;
+}
+
+function watchGitCommits(context: vscode.ExtensionContext): void {
+  const gitExt = vscode.extensions.getExtension<any>('vscode.git');
+  if (!gitExt) return;
+  const init = (exports: any) => {
+    try {
+      const api = exports.getAPI(1);
+      const watch = (repo: any) => {
+        let lastCommit: string | undefined = repo.state.HEAD?.commit;
+        context.subscriptions.push(repo.state.onDidChange(() => {
+          const c: string | undefined = repo.state.HEAD?.commit;
+          if (c && lastCommit && c !== lastCommit) onCommitDetected();
+          if (c) lastCommit = c;
+        }));
+      };
+      api.repositories.forEach(watch);
+      context.subscriptions.push(api.onDidOpenRepository(watch));
+    } catch (_) { /* git deshabilitado */ }
+  };
+  if (gitExt.isActive) init(gitExt.exports);
+  else gitExt.activate().then(init, () => {});
+}
+
+function postToPanel(message: unknown): void {
+  if (!panel) return;
+  if (panelReady) panel.webview.postMessage(message);
+  else pendingPanelMessages.push(message);
 }
 
 function fireEvent(event: XolitoEvent, _detail?: string): void {
@@ -626,11 +676,17 @@ function showPanel(): void {
     { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(extContext.extensionUri, 'assets')] }
   );
   panel.webview.onDidReceiveMessage(async (message) => {
+    if (message.command === 'ready') {
+      panelReady = true;
+      while (pendingPanelMessages.length) panel?.webview.postMessage(pendingPanelMessages.shift());
+      return;
+    }
     if (message.command === 'exorcise') {
       vscode.commands.executeCommand('xolito.exorcise');
     } else if (message.command === 'evaluate_custom') {
-      const customText = message.text;
-      const customLang = message.language || 'typescript';
+      const customText: string = String(message.text ?? '');
+      const customLang = message.language || 'auto';
+      lastEvaluatedText = customText;
       
       const editor = vscode.window.activeTextEditor;
       if (editor && editor.document.getText(editor.selection).trim() === customText.trim()) {
@@ -654,7 +710,7 @@ function showPanel(): void {
       }
 
       lastEvaluationResult = result;
-      panel?.webview.postMessage({ command: 'evaluation_result', result });
+      postToPanel({ command: 'evaluation_result', result });
     } else if (message.command === 'apply_refactor') {
       if (!lastEvaluationResult || !lastEvaluationResult.refactoredCode) {
         vscode.window.showErrorMessage('🦎 Xolito: No hay ninguna refactorización propuesta para aplicar, mijo.');
@@ -668,6 +724,17 @@ function showPanel(): void {
       }
 
       const targetRange = lastSelectedRange || editor.selection;
+
+      // Evita pisar código equivocado: el rango guardado debe seguir conteniendo lo evaluado
+      if (lastSelectedRange) {
+        if (editor.document.getText(lastSelectedRange).trim() !== lastEvaluatedText.trim()) {
+          vscode.window.showErrorMessage('🦎 Xolito: El código cambió desde que lo evalué. Vuelve a evaluarlo antes de aplicar, mijo.');
+          return;
+        }
+      } else if (editor.selection.isEmpty) {
+        vscode.window.showErrorMessage('🦎 Xolito: Selecciona en el editor el código que quieres reemplazar.');
+        return;
+      }
 
       editor.edit(editBuilder => {
         editBuilder.replace(targetRange, lastEvaluationResult!.refactoredCode!);
@@ -686,13 +753,13 @@ function showPanel(): void {
         const language = editor.document.languageId;
         lastSelectedEditor = editor;
         lastSelectedRange = new vscode.Range(selection.start, selection.end);
-        panel?.webview.postMessage({ command: 'import_selection_result', text, language });
+        postToPanel({ command: 'import_selection_result', text, language });
       } else {
         vscode.window.showWarningMessage('🦎 Xolito: No hay ningún editor activo para importar.');
       }
     }
   });
-  panel.onDidDispose(() => { panel = undefined; });
+  panel.onDidDispose(() => { panel = undefined; panelReady = false; pendingPanelMessages.length = 0; });
   updatePanel();
 }
 
@@ -725,6 +792,8 @@ function getSpriteUri(mood: XolitoMood): string {
 
 function updatePanel(): void {
   if (!panel) return;
+  if (exorcismAnimating) return; // re-render a mitad del ritual borraba la animación
+  panelReady = false;
   const baseMood    = xolito.getMood();
   const mood: XolitoMood = currentCorruption.tier === "possessed" ? "corrupt"
                : currentCorruption.tier === "critical" && baseMood !== "panic" ? "mad"
@@ -853,7 +922,7 @@ function updatePanel(): void {
     <div class="corrupt-files">
       ${corruptionWatcher.getFilesWithErrors().map(f => `
         <div class="corrupt-file">
-          <span class="corrupt-file-name" title="${escapeHtml(f.name)}">${escapeHtml(f.name.split('/').pop() || '')}</span>
+          <span class="corrupt-file-name" title="${escapeHtml(f.name)}">${escapeHtml(f.name.split(/[\\/]/).pop() || '')}</span>
           <span class="corrupt-file-count">${f.errors} err</span>
         </div>
       `).join('')}
@@ -963,7 +1032,7 @@ function updatePanel(): void {
 
   <div class="section-title">Últimas frases</div>
   <div class="history">
-    ${messageHistory.map(m=>`<div class="history-item"><span class="hi-time">${m.time}</span><span class="hi-text">"${m.text}"</span></div>`).join('')}
+    ${messageHistory.map(m=>`<div class="history-item"><span class="hi-time">${m.time}</span><span class="hi-text">"${escapeHtml(m.text)}"</span></div>`).join('')}
   </div>
   <div class="footer">"Aquí estoy, cuidándote...<br>y juzgándote con cariño."</div>
 
@@ -990,8 +1059,11 @@ function updatePanel(): void {
     @keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
   </style>
 
-  <script nonce="${nonce}">
+ <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
+    // El panel se re-renderiza completo con cada evento: el estado del evaluador
+    // (código, lenguaje, último resultado) se guarda aquí para no perderlo.
+    const saveState = (patch) => vscode.setState(Object.assign({}, vscode.getState() || {}, patch));
     
     function exorcise() {
       vscode.postMessage({ command: 'exorcise' });
@@ -1024,6 +1096,7 @@ function updatePanel(): void {
       document.getElementById('btn-eval').disabled = true;
       document.getElementById('eval-loading').style.display = 'flex';
       document.getElementById('eval-results').style.display = 'none';
+      saveState({ code, lang: language, loading: true, result: null });
       
       vscode.postMessage({ command: 'evaluate_custom', text: code, language: language });
     }
@@ -1034,6 +1107,49 @@ function updatePanel(): void {
 
     function applyRefactor() {
       vscode.postMessage({ command: 'apply_refactor' });
+    }
+
+    function renderResult(result) {
+        document.getElementById('btn-eval').disabled = false;
+        document.getElementById('eval-loading').style.display = 'none';
+        document.getElementById('eval-results').style.display = 'flex';
+        
+        
+        // Modo y Score
+        document.getElementById('eval-mode').innerText = (result.mode === 'online' ? 'IA Activa ⚡' : 'Local Offline 🔌') + ' (' + result.language + ')';
+        document.getElementById('eval-score').innerText = result.score;
+        if (result.language) {
+          setLanguageInSelect(result.language);
+        }
+        
+        // Barra de progreso y colores
+        const barFill = document.getElementById('eval-score-bar-fill');
+        barFill.style.width = (result.score * 10) + '%';
+        if (result.score >= 8) {
+          barFill.style.background = '#4ec9b0'; // Verde
+        } else if (result.score >= 5) {
+          barFill.style.background = '#cca700'; // Amarillo
+        } else {
+          barFill.style.background = '#ff2222'; // Rojo
+        }
+        
+        // Rúbricas
+        document.getElementById('rubric-semantica').innerText = (result.semantica.passed ? '✅ ' : '❌ ') + result.semantica.comment;
+        document.getElementById('rubric-robustez').innerText = (result.robustez.passed ? '✅ ' : '❌ ') + result.robustez.comment;
+        document.getElementById('rubric-modularidad').innerText = (result.modularidad.passed ? '✅ ' : '❌ ') + result.modularidad.comment;
+        document.getElementById('rubric-documentacion').innerText = (result.documentacion.passed ? '✅ ' : '❌ ') + result.documentacion.comment;
+        
+        // Regaño
+        document.getElementById('eval-regaño').innerText = '"' + result.xolitoRegaño + '"';
+        
+        // Refactorización
+        const refactorSec = document.getElementById('refactor-section');
+        if (result.refactoredCode) {
+          refactorSec.style.display = 'flex';
+          document.getElementById('refactor-code').innerText = result.refactoredCode;
+        } else {
+          refactorSec.style.display = 'none';
+        }
     }
 
     window.addEventListener('message', event => {
@@ -1097,6 +1213,7 @@ function updatePanel(): void {
           }
         }, 110);
       } else if (message.command === 'evaluation_start') {
+        saveState({ code: message.text || '', lang: message.language || 'auto', loading: true, result: null });
         document.getElementById('code-input').value = message.text || '';
         if (message.language) {
           setLanguageInSelect(message.language);
@@ -1105,54 +1222,33 @@ function updatePanel(): void {
         document.getElementById('eval-loading').style.display = 'flex';
         document.getElementById('eval-results').style.display = 'none';
       } else if (message.command === 'evaluation_result') {
-        document.getElementById('btn-eval').disabled = false;
-        document.getElementById('eval-loading').style.display = 'none';
-        document.getElementById('eval-results').style.display = 'flex';
-        
-        const result = message.result;
-        
-        // Modo y Score
-        document.getElementById('eval-mode').innerText = (result.mode === 'online' ? 'IA Activa ⚡' : 'Local Offline 🔌') + ' (' + result.language + ')';
-        document.getElementById('eval-score').innerText = result.score;
-        if (result.language) {
-          setLanguageInSelect(result.language);
-        }
-        
-        // Barra de progreso y colores
-        const barFill = document.getElementById('eval-score-bar-fill');
-        barFill.style.width = (result.score * 10) + '%';
-        if (result.score >= 8) {
-          barFill.style.background = '#4ec9b0'; // Verde
-        } else if (result.score >= 5) {
-          barFill.style.background = '#cca700'; // Amarillo
-        } else {
-          barFill.style.background = '#ff2222'; // Rojo
-        }
-        
-        // Rúbricas
-        document.getElementById('rubric-semantica').innerText = (result.semantica.passed ? '✅ ' : '❌ ') + result.semantica.comment;
-        document.getElementById('rubric-robustez').innerText = (result.robustez.passed ? '✅ ' : '❌ ') + result.robustez.comment;
-        document.getElementById('rubric-modularidad').innerText = (result.modularidad.passed ? '✅ ' : '❌ ') + result.modularidad.comment;
-        document.getElementById('rubric-documentacion').innerText = (result.documentacion.passed ? '✅ ' : '❌ ') + result.documentacion.comment;
-        
-        // Regaño
-        document.getElementById('eval-regaño').innerText = '"' + result.xolitoRegaño + '"';
-        
-        // Refactorización
-        const refactorSec = document.getElementById('refactor-section');
-        if (result.refactoredCode) {
-          refactorSec.style.display = 'flex';
-          document.getElementById('refactor-code').innerText = result.refactoredCode;
-        } else {
-          refactorSec.style.display = 'none';
-        }
+        saveState({ result: message.result, loading: false });
+        renderResult(message.result);
       } else if (message.command === 'import_selection_result') {
+        saveState({ code: message.text || '', lang: message.language || 'auto' });
         document.getElementById('code-input').value = message.text || '';
         if (message.language) {
           setLanguageInSelect(message.language);
         }
       }
     });
+
+    // ── Restaurar estado tras un re-render ──
+    (function restore() {
+      const st = vscode.getState() || {};
+      if (st.code) document.getElementById('code-input').value = st.code;
+      if (st.lang) setLanguageInSelect(st.lang);
+      if (st.loading) {
+        document.getElementById('btn-eval').disabled = true;
+        document.getElementById('eval-loading').style.display = 'flex';
+      } else if (st.result) {
+        renderResult(st.result);
+      }
+      document.getElementById('code-input').addEventListener('input', e => saveState({ code: e.target.value }));
+      document.getElementById('lang-select').addEventListener('change', e => saveState({ lang: e.target.value }));
+    })();
+
+    vscode.postMessage({ command: 'ready' });
   </script>
 </body></html>`;
 }
@@ -1175,12 +1271,12 @@ async function handlePanicButton(): Promise<void> {
     statusBar.color   = undefined;
     statusBar.tooltip = undefined;
     if (dummyDocUri) {
-      for (const tg of vscode.window.tabGroups.all) {
-        for (const tab of tg.tabs) {
-          const input = tab.input as any;
-          if (input?.uri?.toString() === dummyDocUri.toString())
-            await vscode.window.tabGroups.close(tab);
-        }
+      // Es un documento untitled con contenido (sucio): tabGroups.close() mostraba
+      // "¿Guardar cambios?" justo frente al jefe. Revert+close lo cierra sin preguntar.
+      const dummyDoc = vscode.workspace.textDocuments.find(d => d.uri.toString() === dummyDocUri!.toString());
+      if (dummyDoc && !dummyDoc.isClosed) {
+        await vscode.window.showTextDocument(dummyDoc, { preview: false });
+        await vscode.commands.executeCommand('workbench.action.revertAndCloseActiveEditor');
       }
     }
     if (originalEditor) {
@@ -1196,7 +1292,8 @@ async function handlePanicButton(): Promise<void> {
 async function handleExorcise(): Promise<void> {
   isCurrentlyExorcised = true;
   if (panel) {
-    panel.webview.postMessage({ command: 'exorcise_start' });
+    postToPanel({ command: 'exorcise_start' });
+    exorcismAnimating = true;
   }
 
   await vscode.window.withProgress({
@@ -1212,6 +1309,7 @@ async function handleExorcise(): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 1900));
     progress.report({ increment: 30, message: "¡Exorcismo exitoso!" });
   });
+  exorcismAnimating = false;
 
   consecutiveErrors = 0;
   corruptionWatcher.reportBuildSuccess();
@@ -1237,6 +1335,7 @@ async function handleEvaluateCodeSelection(): Promise<void> {
   }
 
   lastSelectedText = selectedText;
+  lastEvaluatedText = selectedText;
   lastSelectedEditor = editor;
   lastSelectedRange = new vscode.Range(selection.start, selection.end);
 
@@ -1246,9 +1345,7 @@ async function handleEvaluateCodeSelection(): Promise<void> {
   showPanel();
 
   // Señalizar al webview que empiece a cargar
-  if (panel) {
-    panel.webview.postMessage({ command: 'evaluation_start', text: selectedText, language });
-  }
+  postToPanel({ command: 'evaluation_start', text: selectedText, language });
 
   const apiKey = vscode.workspace.getConfiguration('xolito').get<string>('geminiApiKey', '').trim();
 
@@ -1265,9 +1362,7 @@ async function handleEvaluateCodeSelection(): Promise<void> {
 
   lastEvaluationResult = result;
 
-  if (panel) {
-    panel.webview.postMessage({ command: 'evaluation_result', result });
-  }
+  postToPanel({ command: 'evaluation_result', result });
 }
 
 function unlockBadge(badgeId: string, badgeName: string, reactionPhrase: string, reactionMood: XolitoMood = 'proud'): void {

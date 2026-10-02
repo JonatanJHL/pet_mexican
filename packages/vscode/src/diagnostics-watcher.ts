@@ -66,13 +66,9 @@ export class DiagnosticsWatcher {
     }
 
     // ── Errores resueltos ─────────────────────────────────────
+    // (antes había dos ifs y se disparaba build_success dos veces si quedaban warnings)
     if (errors === 0 && this.prevErrorCount > 0) {
-      this.onEvent('build_success', 'Sin errores');
-    }
-
-    // ── De errores a solo warnings ────────────────────────────
-    if (errors === 0 && warnings > 0 && this.prevErrorCount > 0) {
-      this.onEvent('build_success', 'Solo warnings');
+      this.onEvent('build_success', warnings > 0 ? 'Solo warnings' : 'Sin errores');
     }
 
     // ── Warnings nuevos (sin errores) ─────────────────────────
@@ -98,8 +94,9 @@ export class DiagnosticsWatcher {
     // Itera sobre todos los archivos abiertos con diagnósticos
     for (const [uri, diagnostics] of vscode.languages.getDiagnostics()) {
       // Solo archivos del workspace actual, ignorar node_modules
-      if (uri.fsPath.includes('node_modules')) continue;
-      if (uri.fsPath.includes('.git'))         continue;
+      // Por segmento de ruta: includes('.git') también excluía .github/ y .gitignore
+      const segments = uri.fsPath.split(/[\/]/);
+      if (segments.includes('node_modules') || segments.includes('.git')) continue;
 
       for (const d of diagnostics) {
         if (d.severity === vscode.DiagnosticSeverity.Error) {

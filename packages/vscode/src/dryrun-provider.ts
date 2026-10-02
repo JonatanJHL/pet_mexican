@@ -1,8 +1,14 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+
+const GEMINI_TIMEOUT_MS = 30_000;
+const REFRESH_DEBOUNCE_MS = 600;
 
 export class XolitoDryRunProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'xolito.dryRunView';
     private _view?: vscode.WebviewView;
+    private _viewDisposables: vscode.Disposable[] = [];
+    private _refreshTimer?: NodeJS.Timeout;
 
     constructor(
         private readonly _extensionUri: vscode.Uri
@@ -42,12 +48,30 @@ export class XolitoDryRunProvider implements vscode.WebviewViewProvider {
             }
         });
 
-        // Trigger update when active editor changes
-        vscode.window.onDidChangeActiveTextEditor(() => this.updateFunctionsList());
-        vscode.workspace.onDidChangeTextDocument(() => this.updateFunctionsList());
+        // Listeners ligados a la vida de la vista: antes nunca se liberaban y se
+        // duplicaban cada vez que VS Code re-creaba la vista.
+        this._viewDisposables.forEach(d => d.dispose());
+        this._viewDisposables = [
+            vscode.window.onDidChangeActiveTextEditor(() => this.scheduleRefresh()),
+            vscode.workspace.onDidChangeTextDocument(e => {
+                if (e.document === vscode.window.activeTextEditor?.document) this.scheduleRefresh();
+            }),
+            webviewView.onDidDispose(() => {
+                this._viewDisposables.forEach(d => d.dispose());
+                this._viewDisposables = [];
+                if (this._refreshTimer) clearTimeout(this._refreshTimer);
+                this._view = undefined;
+            }),
+        ];
 
         // Initial populate
         this.updateFunctionsList();
+    }
+
+    /** El DocumentSymbolProvider es costoso: no correrlo en cada tecla. */
+    private scheduleRefresh() {
+        if (this._refreshTimer) clearTimeout(this._refreshTimer);
+        this._refreshTimer = setTimeout(() => this.updateFunctionsList(), REFRESH_DEBOUNCE_MS);
     }
 
     private async updateFunctionsList() {
@@ -62,7 +86,7 @@ export class XolitoDryRunProvider implements vscode.WebviewViewProvider {
         }
 
         const document = activeEditor.document;
-        const fileName = document.fileName.split('/').pop() || document.fileName;
+        const fileName = path.basename(document.fileName) || document.fileName; // también en Windows
 
         try {
             const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
@@ -126,7 +150,7 @@ export class XolitoDryRunProvider implements vscode.WebviewViewProvider {
         }
 
         try {
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
             const language = vscode.window.activeTextEditor?.document.languageId || 'auto';
 
             const systemInstruction = `
@@ -151,7 +175,8 @@ Mantén el rastro conciso pero descriptivo. No inventes código, guíate únicam
 
             const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+                signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
                 body: JSON.stringify({
                     contents: [
                         {
@@ -206,7 +231,7 @@ Mantén el rastro conciso pero descriptivo. No inventes código, guíate únicam
                 prediction: parsedResult.prediction,
                 comment: parsedResult.comment,
                 mood: parsedResult.mood,
-                trace: parsedResult.trace
+                trace: Array.isArray(parsedResult.trace) ? parsedResult.trace : []
             });
 
         } catch (error: any) {
@@ -480,6 +505,8 @@ Mantén el rastro conciso pero descriptivo. No inventes código, guíate únicam
             const message = event.data;
             switch (message.type) {
                 case 'setFunctions':
+                    // Conserva la función elegida (antes se reseteaba a la primera en cada refresco)
+                    const prevName = activeFunctions[functionSelect.value]?.name;
                     activeFunctions = message.functions;
                     fileNameEl.textContent = message.fileName;
                     
@@ -493,6 +520,8 @@ Mantén el rastro conciso pero descriptivo. No inventes código, guíate únicam
                             opt.textContent = f.name;
                             functionSelect.appendChild(opt);
                         });
+                        const keep = activeFunctions.findIndex(f => f.name === prevName);
+                        if (keep >= 0) functionSelect.value = keep.toString();
                     }
                     break;
 
@@ -521,12 +550,20 @@ Mantén el rastro conciso pero descriptivo. No inventes código, guíate únicam
                         predictionVal.textContent = message.prediction;
                         
                         traceBody.innerHTML = '';
-                        message.trace.forEach(t => {
+                        // textContent: el código trae < > (genéricos, comparaciones) y venía de la IA vía innerHTML
+                        (message.trace || []).forEach(t => {
                             const tr = document.createElement('tr');
-                            tr.innerHTML = \`
-                                <td><strong>L\${t.line}</strong><br><code style="font-size:0.75rem;color:#a09cb0;">\${t.code}</code></td>
-                                <td style="color:#e2e8f0;">\${t.effect}</td>
-                            \`;
+                            const tdCode = document.createElement('td');
+                            const strong = document.createElement('strong');
+                            strong.textContent = 'L' + t.line;
+                            const codeEl = document.createElement('code');
+                            codeEl.style.cssText = 'font-size:0.75rem;color:#a09cb0;';
+                            codeEl.textContent = t.code;
+                            tdCode.append(strong, document.createElement('br'), codeEl);
+                            const tdEffect = document.createElement('td');
+                            tdEffect.style.color = '#e2e8f0';
+                            tdEffect.textContent = t.effect;
+                            tr.append(tdCode, tdEffect);
                             traceBody.appendChild(tr);
                         });
                     } else {

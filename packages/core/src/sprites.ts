@@ -125,7 +125,7 @@ export function renderWithBubble(mood: XolitoMood, message: string): string {
   let current = '';
 
   for (const word of words) {
-    if ((current + ' ' + word).trim().length > maxW) {
+    if (current && (current + ' ' + word).trim().length > maxW) {
       lines.push(current.trim());
       current = word;
     } else {

@@ -3,6 +3,10 @@
 //  Motor híbrido de evaluación de código (Xolito)
 // ============================================================
 
+import { hasSpanglish } from './spanglish.js';
+
+const GEMINI_TIMEOUT_MS = 30_000;
+
 export interface CodeEvaluationResult {
   score: number; // 0 - 10
   semantica: { score: number; passed: boolean; comment: string };
@@ -20,19 +24,44 @@ export interface CodeEvaluationResult {
  */
 export function detectLanguageOffline(code: string): string {
   const c = code.trim();
-  if (/#include\b|\bstd::\b|\bcout\b/.test(c)) return 'cpp';
-  if (/\bdef\s+\w+\s*\(|\bimport\s+[a-z_]+\b|\bprint\s*\(/.test(c)) return 'python';
-  if (/\bfun\s+\w+\s*\(|\bval\s+\w+\b|\bvar\s+\w+\b/.test(c)) {
-    if (/\bfun\b|\bval\b/.test(c)) return 'kotlin';
-  }
+  if (/<\?php\b/.test(c)) return 'php';
+  if (/#include\b|\bstd::|\bcout\b/.test(c)) return 'cpp';
+  // Python: def con ":" al final, o "import x" / "from x import y" sin sintaxis de JS
+  if (/\bdef\s+\w+\s*\([^)]*\)\s*(?:->\s*[^:\n]+)?:|^\s*from\s+[\w.]+\s+import\b|^\s*import\s+[\w.]+(?:\s+as\s+\w+)?\s*$|^\s*print\s*\(/m.test(c)) return 'python';
+  if (/\bfun\s+\w+\s*\(|\bval\s+\w+\b/.test(c)) return 'kotlin';
   if (/\bpublic\s+class\b|\bSystem\.out\.print/.test(c)) return 'java';
-  if (/\binterface\s+\w+\b|\btype\s+\w+\s*=|\b:\s*(number|string|boolean|any|void)\b/.test(c)) return 'typescript';
+  if (/\binterface\s+\w+\b|\btype\s+\w+\s*=|\w\s*:\s*(?:number|string|boolean|any|void)\b/.test(c)) return 'typescript';
   if (/\bfn\s+\w+\s*\(|\bpub\s+fn\b|\buse\s+std::|\bprintln!|\blet\s+mut\b/.test(c)) return 'rust';
   if (/\bpackage\s+\w+\b|\bfunc\s+\w+\s*\(|\berr\s*!=\s*nil\b/.test(c)) return 'go';
   if (/\busing\s+System\b|\bnamespace\s+\w+\b|\bConsole\.WriteLine\b/.test(c)) return 'csharp';
-  if (/<\?php\b|\b\$[a-zA-Z_]\w*\b/.test(c)) return 'php';
   if (/\bdef\s+[a-z_]\w*\b(?:\s+|\([\s\S]*?\))\n[\s\S]*?\bend\b|\bputs\s+["']|\battr_(?:reader|writer|accessor)\b/.test(c)) return 'ruby';
+  if (/\b(?:const|let|var|function)\b|=>/.test(c)) return 'javascript';
+  // PHP sin etiqueta de apertura: $variable = ... / $obj->metodo
+  if (/(?:^|[\s(;,])\$[a-zA-Z_]\w*\s*(?:=(?!=)|->|;)/m.test(c)) return 'php';
   return 'javascript';
+}
+
+/** Lenguajes donde # inicia un comentario. */
+const HASH_COMMENT_LANGS = new Set(['python', 'ruby', 'php', 'shellscript', 'bash', 'sh', 'perl', 'r', 'yaml', 'powershell', 'coffeescript']);
+
+/** Profundidad máxima de llaves, ignorando strings y comentarios. */
+function maxBraceDepth(code: string): number {
+  const stripped = code.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*|(["'`])(?:\\.|(?!\1)[^\\])*\1/g, '');
+  let depth = 0, max = 0;
+  for (const ch of stripped) {
+    if (ch === '{') { depth++; if (depth > max) max = depth; }
+    else if (ch === '}' && depth > 0) depth--;
+  }
+  return max;
+}
+
+/** Indentación relativa (ignora la sangría base de una selección pegada; la 1a línea suele venir trimeada). */
+function hasDeepRelativeIndent(lines: string[]): boolean {
+  const body = lines.slice(1).filter(l => l.trim().length > 0);
+  if (body.length === 0) return false;
+  const indentOf = (l: string) => (l.match(/^[ \t]*/)?.[0] ?? '').replace(/\t/g, '    ').length;
+  const base = Math.min(...body.map(indentOf));
+  return body.some(l => indentOf(l) - base >= 12);
 }
 
 /**
@@ -50,18 +79,12 @@ export function evaluateCodeOffline(code: string, language: string): CodeEvaluat
   let semanticaComment = 'Nombres y estilo coherentes. Así se hace.';
   let semanticaPassed = true;
 
-  // Patrones Spanglish: verbos en inglés con nombres en español o viceversa
-  const spanglishPatterns = [
-    /\bget_[a-z]*[A-Z]|\bfetch[_]?[A-ZÁÉÍÓÚÑ]/,
-    /\b[a-z]+_[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+\b/,
-    /\b(get|set|fetch|update|delete|create)[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+/,
-  ];
-
-  const hasSpanglish = spanglishPatterns.some(p => p.test(cleanCode));
+  // Spanglish: verbo en inglés + sustantivo en español (fuente única en spanglish.ts)
+  const spanglishFound = hasSpanglish(cleanCode);
   // Variables de una sola letra declaradas localmente
   const singleLetterVars = /\b(let|const|var|val)\s+[a-ghl-z]\b/.test(cleanCode);
 
-  if (hasSpanglish) {
+  if (spanglishFound) {
     semanticaScore = 0;
     semanticaPassed = false;
     semanticaComment = 'Se detectó mezcla de idiomas (Spanglish) en variables/funciones. ¡Elige uno solo, mijo!';
@@ -76,7 +99,10 @@ export function evaluateCodeOffline(code: string, language: string): CodeEvaluat
   let robustezComment = 'Manejo de errores básico detectado.';
   let robustezPassed = true;
 
-  const emptyCatch = /catch\s*\(\s*\w*\s*\)\s*\{\s*(\/\/.*|\/\*[\s\S]*?\*\/|\s)*\}/.test(cleanCode);
+  // catch vacío: JS/TS (con o sin binding), Java/C# (Exception e), Kotlin (e: Exception), Python (except: pass)
+  const emptyCatch =
+    /catch\s*(?:\([^)]*\))?\s*\{\s*(?:(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/)\s*)*\}/.test(cleanCode) ||
+    /\bexcept\b[^:\n]*:\s*(?:#[^\n]*)?\s*\n?\s*pass\b/.test(cleanCode);
   const doubleBangKotlin = /!!/.test(cleanCode) && (evaluatedLanguage === 'kotlin' || evaluatedLanguage === 'java');
   const hasTryCatch = /try\s*\{/.test(cleanCode) || /catch\s*\(/.test(cleanCode);
 
@@ -105,8 +131,8 @@ export function evaluateCodeOffline(code: string, language: string): CodeEvaluat
   const mediumFunction = totalLines > 20;
 
   // Medir anidamiento excesivo (3 niveles de indentación profunda de llaves)
-  const nestedIndent = /\{\s*\n\s*\{\s*\n\s*\{/.test(cleanCode.replace(/\s+/g, ' '));
-  const deepIndentation = lines.some(line => /^\s{12,}\S/.test(line));
+  const nestedIndent = maxBraceDepth(cleanCode) >= 4;
+  const deepIndentation = hasDeepRelativeIndent(lines);
 
   if (longFunction) {
     modularidadScore = 1;
@@ -126,8 +152,10 @@ export function evaluateCodeOffline(code: string, language: string): CodeEvaluat
   let documentacionComment = 'Comentarios aclaratorios presentes.';
   let documentacionPassed = true;
 
-  const commentPatterns = /(\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*|#.*)/;
-  const hasComments = commentPatterns.test(cleanCode);
+  const slashComments = /\/\*[\s\S]*?\*\/|(?:^|[^:\\])\/\/.*/m.test(cleanCode);
+  const hashComments  = HASH_COMMENT_LANGS.has(evaluatedLanguage) && /^\s*#(?!!)|\s#\s/m.test(cleanCode);
+  const docstrings    = evaluatedLanguage === 'python' && /"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'/.test(cleanCode);
+  const hasComments   = slashComments || hashComments || docstrings;
 
   if (!hasComments && totalLines > 10) {
     documentacionScore = 0;
@@ -173,7 +201,7 @@ export async function evaluateCodeWithGemini(
   language: string,
   apiKey: string
 ): Promise<CodeEvaluationResult> {
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
   const systemInstruction = `
 Eres Xolito, el ajolote regañón, sarcástico pero cariñoso que audita código y ayuda a los desarrolladores a escribir código limpio y estructurado en español mexicano con Spanglish casual ("mijo", "cuate", "la regaste", "órale", etc.).
@@ -199,7 +227,9 @@ Debes regresar OBLIGATORIAMENTE un JSON que cumpla exactamente con el esquema es
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      // La key va en header para que no quede en logs/URLs
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
       body: JSON.stringify({
         contents: [
           {
@@ -282,8 +312,20 @@ Debes regresar OBLIGATORIAMENTE un JSON que cumpla exactamente con el esquema es
     }
 
     const result = JSON.parse(candidateText) as Omit<CodeEvaluationResult, 'mode'>;
+    // La IA no siempre respeta los rangos: se acotan para que la UI no muestre 14/10
+    const clamp = (n: unknown, max: number) => Math.max(0, Math.min(max, Math.round(Number(n) || 0)));
+    const rubric = (r: CodeEvaluationResult['semantica'] | undefined, max: number) => ({
+      score: clamp(r?.score, max), passed: Boolean(r?.passed), comment: String(r?.comment ?? ''),
+    });
+    const semantica     = rubric(result.semantica, 2);
+    const robustez      = rubric(result.robustez, 3);
+    const modularidad   = rubric(result.modularidad, 3);
+    const documentacion = rubric(result.documentacion, 2);
     return {
       ...result,
+      semantica, robustez, modularidad, documentacion,
+      score: clamp(result.score, 10),
+      language: result.language || language,
       mode: 'online'
     };
   } catch (err) {

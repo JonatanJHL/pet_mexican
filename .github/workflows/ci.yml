@@ -26,6 +26,11 @@ jobs:
       - name: Build core
         run: cd packages/core && pnpm exec tsc
 
+      - name: Typecheck claude-code y vscode
+        run: |
+          cd packages/claude-code && pnpm exec tsc --noEmit && cd ../..
+          cd packages/vscode && pnpm exec tsc --noEmit
+
       - name: Run tests
         run: pnpm run test
 

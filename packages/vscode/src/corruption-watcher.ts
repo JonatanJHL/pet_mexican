@@ -41,27 +41,35 @@ export class CorruptionWatcher {
   private healthFile:        string | undefined;
   private filesWithErrors:   FileWithErrors[] = [];
 
-  constructor(onChange: (state: CorruptionState) => void) {
+  private recalcTimer:       NodeJS.Timeout | undefined;
+
+  /**
+   * @param storageDir carpeta privada de la extensión (context.storageUri).
+   * Antes se escribía xolito-health.json en la raíz del repo del usuario.
+   */
+  constructor(onChange: (state: CorruptionState) => void, storageDir?: string) {
     this.onChange = onChange;
-    const ws = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (ws) this.healthFile = path.join(ws, 'xolito-health.json');
+    if (storageDir) {
+      try { fs.mkdirSync(storageDir, { recursive: true }); } catch (_) {}
+      this.healthFile = path.join(storageDir, 'xolito-health.json');
+    }
+  }
+
+  /** onDidChangeDiagnostics dispara decenas de veces por segundo: se agrupa. */
+  private scheduleRecalc(): void {
+    if (this.recalcTimer) clearTimeout(this.recalcTimer);
+    this.recalcTimer = setTimeout(() => {
+      this.updateFromDiagnostics();
+      this.recalculate();
+    }, 500);
   }
 
   start(): void {
     this.disposables.push(
-      vscode.languages.onDidChangeDiagnostics(() => {
-        this.updateFromDiagnostics();
-        this.recalculate();
-      }),
-      vscode.workspace.onDidSaveTextDocument(() => {
-        this.updateFromDiagnostics();
-        this.recalculate();
-      }),
+      vscode.languages.onDidChangeDiagnostics(() => this.scheduleRecalc()),
+      vscode.workspace.onDidSaveTextDocument(() => this.scheduleRecalc()),
       // Recalcula cuando se cierra un documento
-      vscode.workspace.onDidCloseTextDocument(() => {
-        this.updateFromDiagnostics();
-        this.recalculate();
-      }),
+      vscode.workspace.onDidCloseTextDocument(() => this.scheduleRecalc()),
     );
 
     this.updateFromDiagnostics();
@@ -74,6 +82,7 @@ export class CorruptionWatcher {
     this.disposables = [];
     if (this.scanTimer) clearInterval(this.scanTimer);
     if (this.saveTimer) clearTimeout(this.saveTimer);
+    if (this.recalcTimer) clearTimeout(this.recalcTimer);
   }
 
   reportBuildFail():    void { this.consecutiveFails++;   this.recalculate(); }
@@ -106,8 +115,12 @@ export class CorruptionWatcher {
     for (const [uri, diags] of allDiags) {
       const filePath = uri.fsPath;
 
-      // Solo archivos dentro del workspace — ignora archivos externos/temporales
-      if (wsPath && !filePath.startsWith(wsPath)) continue;
+      // Solo archivos dentro del workspace — ignora externos/temporales
+      // (path.relative evita que /repo-bak pase como si fuera /repo)
+      if (wsPath) {
+        const rel = path.relative(wsPath, filePath);
+        if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) continue;
+      }
 
       let fileErrors   = 0;
       let fileWarnings = 0;

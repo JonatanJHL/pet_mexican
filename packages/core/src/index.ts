@@ -9,3 +9,5 @@ export { calculateCorruption, glitchText } from './corruption.js';
 export type { CorruptionState, CorruptionFactors, CorruptionTier } from './corruption.js';
 export { evaluateCodeOffline, evaluateCodeWithGemini } from './xolito-code.js';
 export type { CodeEvaluationResult } from './xolito-code.js';
+export { findSpanglish, hasSpanglish } from './spanglish.js';
+export type { SpanglishMatch } from './spanglish.js';

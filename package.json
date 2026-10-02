@@ -7,8 +7,8 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
-    "dev": "npm run dev --workspaces --if-present",
+    "build": "pnpm -r --filter ./packages/core --filter ./packages/claude-code --filter ./packages/vscode run build",
+    "dev": "pnpm -r --parallel --if-present run dev",
     "lint": "eslint packages/*/src/**/*.ts",
     "test": "vitest run",
     "test:watch": "vitest",

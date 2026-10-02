@@ -6,16 +6,18 @@
 // ============================================================
 
 import * as vscode from 'vscode';
-import { SPANGLISH_PATTERNS } from './extension.js';
+import { findSpanglish } from '@xolito/core';
+
+const UPDATE_DEBOUNCE_MS = 300;
 
 const CONSOLE_PATTERNS: Record<string, RegExp> = {
   javascript:      /console\.log\s*\(/g,
   typescript:      /console\.log\s*\(/g,
   javascriptreact: /console\.log\s*\(/g,
   typescriptreact: /console\.log\s*\(/g,
-  python:          /print\s*\(/g,
+  python:          /\bprint\s*\(/g,
   php:             /var_dump\s*\(|print_r\s*\(/g,
-  ruby:            /puts\s+|p\s+/g,
+  ruby:            /\bputs\s+|(?:^|[\s;])p\s+(?=\S)/gm,
   go:              /fmt\.Println\s*\(/g,
   rust:            /println!\s*\(/g,
   java:            /System\.out\.print/g,
@@ -35,9 +37,11 @@ export class XolitoDecorations {
   private phraseCounters: Map<string, number> = new Map();
 
   // ── Memoria entre archivos ────────────────────────────────
-  private prevFileUri    = '';
-  private prevFileErrors = 0;
-  private todoCounter    = 0;
+  private prevFileUri     = '';
+  private prevFileErrors  = 0;   // errores del archivo ANTERIOR (se fija al cambiar de archivo)
+  private currentFileErrs = 0;   // errores del archivo actual (última pasada)
+  private todoCounter     = 0;
+  private updateTimer: NodeJS.Timeout | undefined;
 
   constructor() {
     this.errorDecoration = vscode.window.createTextEditorDecorationType({
@@ -67,9 +71,7 @@ export class XolitoDecorations {
 
         // ── Cambio de archivo: resetea contadores y guarda memoria ──
         if (this.prevFileUri && this.prevFileUri !== currentUri) {
-          this.phraseCounters.clear();
-          this.todoCounter = 0;
-          // prevFileErrors ya fue actualizado en updateDecorations
+          this.prevFileErrors = this.currentFileErrs;
         }
         this.prevFileUri = currentUri;
         this.updateDecorations(editor);
@@ -84,7 +86,12 @@ export class XolitoDecorations {
       vscode.workspace.onDidChangeTextDocument(e => {
         const editor = vscode.window.activeTextEditor;
         if (editor && this.enabled && e.document === editor.document) {
-          this.updateDecorations(editor);
+          // Debounce: escanear todo el archivo en cada tecla congela archivos grandes
+          if (this.updateTimer) clearTimeout(this.updateTimer);
+          this.updateTimer = setTimeout(() => {
+            const ed = vscode.window.activeTextEditor;
+            if (ed && this.enabled && ed.document === e.document) this.updateDecorations(ed);
+          }, UPDATE_DEBOUNCE_MS);
         }
       }),
     );
@@ -92,6 +99,7 @@ export class XolitoDecorations {
 
   stop(): void {
     this.enabled = false;
+    if (this.updateTimer) clearTimeout(this.updateTimer);
     this.disposables.forEach(d => d.dispose());
     this.disposables = [];
     vscode.window.visibleTextEditors.forEach(editor => {
@@ -113,6 +121,10 @@ export class XolitoDecorations {
     const text  = doc.getText();
     const lang  = doc.languageId;
     const diags = vscode.languages.getDiagnostics(doc.uri);
+
+    // Contadores por pasada: el mismo diagnóstico conserva su frase entre teclazos (sin parpadeo)
+    this.phraseCounters.clear();
+    this.todoCounter = 0;
 
     const errorRanges:   vscode.DecorationOptions[] = [];
     const warningRanges: vscode.DecorationOptions[] = [];
@@ -182,7 +194,7 @@ export class XolitoDecorations {
         infoRanges.push({
           range: new vscode.Range(pos, end),
           renderOptions: {
-            after: { contentText: `  🦎 ${this.debugPhrase(lang)}` },
+            after: { contentText: `  🦎 ${this.debugPhrase(lang, lineNum)}` },
           },
         });
       }
@@ -206,7 +218,7 @@ export class XolitoDecorations {
     }
 
     // ── Try-Catch Vacíos (Linter Mexicano) ────────────────────
-    const EMPTY_CATCH_PATTERN = /catch\s*(?:\([^)]*\))?\s*\{\s*\}/g;
+    const EMPTY_CATCH_PATTERN = /catch\s*(?:\([^)]*\))?\s*\{\s*(?:(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/)\s*)*\}/g;
     let catchMatch;
     while ((catchMatch = EMPTY_CATCH_PATTERN.exec(text)) !== null) {
       const pos     = doc.positionAt(catchMatch.index);
@@ -217,7 +229,7 @@ export class XolitoDecorations {
       warningRanges.push({
         range: new vscode.Range(pos, end),
         renderOptions: {
-          after: { contentText: `  🦎💀 ${this.emptyCatchPhrase()}` },
+          after: { contentText: `  🦎💀 ${this.emptyCatchPhrase(lineNum)}` },
         },
       });
     }
@@ -234,29 +246,25 @@ export class XolitoDecorations {
       warningRanges.push({
         range: new vscode.Range(pos, end),
         renderOptions: {
-          after: { contentText: `  🦎💥 ${this.unsafeCastPhrase()}` },
+          after: { contentText: `  🦎💥 ${this.unsafeCastPhrase(lineNum)}` },
         },
       });
     }
 
     // ── Spanglish en variables (Linter Mexicano) ──────────────
     if (lang !== 'markdown') {
-      for (const pattern of SPANGLISH_PATTERNS) {
-        pattern.lastIndex = 0;
-        let spanglishMatch;
-        while ((spanglishMatch = pattern.exec(text)) !== null) {
-          const pos     = doc.positionAt(spanglishMatch.index);
-          const lineNum = pos.line;
-          if (warningLines.has(lineNum)) continue;
-          warningLines.add(lineNum);
-          const end = doc.positionAt(spanglishMatch.index + spanglishMatch[0].length);
-          warningRanges.push({
-            range: new vscode.Range(pos, end),
-            renderOptions: {
-              after: { contentText: `  🦎🌶️ Spanglish: Consistencia, elige un idioma.` },
-            },
-          });
-        }
+      for (const sm of findSpanglish(text)) {
+        const pos     = doc.positionAt(sm.index);
+        const lineNum = pos.line;
+        if (warningLines.has(lineNum)) continue;
+        warningLines.add(lineNum);
+        const end = doc.positionAt(sm.index + sm.length);
+        warningRanges.push({
+          range: new vscode.Range(pos, end),
+          renderOptions: {
+            after: { contentText: `  🦎🌶️ Spanglish: Consistencia, elige un idioma.` },
+          },
+        });
       }
     }
 
@@ -264,8 +272,8 @@ export class XolitoDecorations {
     editor.setDecorations(this.warningDecoration, warningRanges);
     editor.setDecorations(this.infoDecoration,    infoRanges);
 
-    // ── Actualiza memoria para el siguiente archivo ───────────
-    this.prevFileErrors = currentErrors;
+    // ── Memoria: se pasa a prevFileErrors solo al cambiar de archivo ──
+    this.currentFileErrs = currentErrors;
   }
 
   // ── Rotación anti-repetición ──────────────────────────────
@@ -293,7 +301,7 @@ export class XolitoDecorations {
       const counter = this.phraseCounters.get('cross_file') ?? 0;
       this.phraseCounters.set('cross_file', counter + 1);
       if (counter % 3 === 0) {
-        return crossFileJabs[Math.floor(Math.random() * crossFileJabs.length)];
+        return crossFileJabs[Math.floor(counter / 3) % crossFileJabs.length];
       }
     }
 
@@ -450,7 +458,7 @@ export class XolitoDecorations {
   }
 
   // ── Debug prints ──────────────────────────────────────────
-  private debugPhrase(lang: string): string {
+  private debugPhrase(lang: string, line: number): string {
     const phrases: Record<string, string[]> = {
       php:     ['var_dump detectado. clásico.', '¿ibas a subir esto a prod?',
                 'print_r en prod. arte.'],
@@ -466,7 +474,7 @@ export class XolitoDecorations {
                 'console.log/print. la tradición que nunca muere.'],
     };
     const options = phrases[lang] ?? phrases['default'];
-    return options[Math.floor(Math.random() * options.length)];
+    return options[line % options.length];
   }
 
   private getBarrioTranslation(msg: string): string | null {
@@ -495,23 +503,23 @@ export class XolitoDecorations {
     return null;
   }
 
-  private emptyCatchPhrase(): string {
+  private emptyCatchPhrase(line: number): string {
     const phrases = [
       'Try-catch vacío... ¿escondiendo tus pecados, mijo?',
       'Si ocurre un error aquí, nadie se va a enterar. Dios nos guarde.',
       'Un catch vacío es como barrer la basura debajo de la alfombra.',
       '¿Silenciando excepciones? Muy valiente de tu parte.',
     ];
-    return phrases[Math.floor(Math.random() * phrases.length)];
+    return phrases[line % phrases.length];
   }
 
-  private unsafeCastPhrase(): string {
+  private unsafeCastPhrase(line: number): string {
     const phrases = [
       'Cast inseguro (!!). Estás jugando con fuego, mijo.',
       'El compilador te lo advierte, pero tú de terco con el !!',
       'Si eso llega nulo, todo explota. Prepárate.',
       'NullPointerException en 3, 2, 1...',
     ];
-    return phrases[Math.floor(Math.random() * phrases.length)];
+    return phrases[line % phrases.length];
   }
 }

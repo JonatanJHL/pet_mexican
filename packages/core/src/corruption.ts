@@ -71,7 +71,8 @@ export const GLITCH_CHARS = ['̷','̸','̴','̵','̶'];
 export function glitchText(text: string, intensity: number): string {
   if (intensity < 50) return text;
   const factor = (intensity - 50) / 50;
-  return text.split('').map(char => {
+  // Array.from separa por code point: split('') parte emojis (🦎👹) y los deja como �
+  return Array.from(text).map(char => {
     if (Math.random() < factor * 0.35) {
       return char + GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
     }

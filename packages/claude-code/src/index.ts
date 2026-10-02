@@ -1,10 +1,11 @@
+#!/usr/bin/env node
 // ============================================================
 //  xolito/packages/claude-code/src/index.ts
 //  Plugin de Xolito para Claude Code
 //  Uso: npx @xolito/claude-code
 // ============================================================
 
-import { Xolito } from '@xolito/core';
+import { Xolito, PHRASES } from '@xolito/core';
 import type { XolitoEvent } from '@xolito/core';
 import * as readline from 'readline';
 
@@ -18,6 +19,12 @@ const ANSI = {
   dim:     '\x1b[2m',
   reset:   '\x1b[0m',
 };
+
+// react() nunca lanza con eventos desconocidos (regresa la frase genérica),
+// así que el try/catch de antes jamás mostraba "Ese evento no lo conozco".
+function isKnownEvent(e: string): e is XolitoEvent {
+  return Object.prototype.hasOwnProperty.call(PHRASES, e);
+}
 
 function colorize(text: string, ...codes: string[]): string {
   return codes.join('') + text + ANSI.reset;
@@ -83,11 +90,10 @@ async function runInteractive(xolito: Xolito): Promise<void> {
       console.log(colorize('\n🦎 Xolito: Órale, hasta luego. No me extrañes mucho.\n', ANSI.cyan));
       process.exit(0);
     } else {
-      const event = input as XolitoEvent;
-      try {
-        const { text } = xolito.react(event);
+      if (isKnownEvent(input)) {
+        const { text } = xolito.react(input);
         printXolito(xolito, text);
-      } catch {
+      } else {
         console.log(colorize(`Ese evento no lo conozco: ${input}`, ANSI.dim));
         console.log(colorize('Escribe "help" para ver qué sé hacer.', ANSI.dim));
       }
@@ -109,8 +115,10 @@ if (args.length === 0) {
   runInteractive(xolito);
 } else if (args[0] === 'help') {
   printHelp();
-} else {
-  const event = args[0] as XolitoEvent;
-  const { text } = xolito.react(event);
+} else if (isKnownEvent(args[0])) {
+  const { text } = xolito.react(args[0]);
   printXolito(xolito, text);
+} else {
+  console.error(`Ese evento no lo conozco: ${args[0]}. Usa "help".`);
+  process.exitCode = 1;
 }
