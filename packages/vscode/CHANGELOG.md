@@ -14,6 +14,7 @@
 - **Pruebas de Escritorio:** conserva la función seleccionada, no se recalcula en cada tecla y muestra bien código con `<` `>`.
 - **Gemini:** la API key viaja en header, con timeout de 30 s y puntajes acotados.
 - Las frases inline ya no cambian en cada tecla.
+- Los comentarios inline se muestran al final de la línea (antes partían el código en dos) y solo uno por línea.
 
 ## 1.5.0
 - Pruebas de Escritorio (Dry Run) con IA, linter inline y termómetro de estrés.

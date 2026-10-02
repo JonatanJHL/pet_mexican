@@ -130,9 +130,13 @@ export class XolitoDecorations {
     const warningRanges: vscode.DecorationOptions[] = [];
     const infoRanges:    vscode.DecorationOptions[] = [];
 
-    const errorLines   = new Set<number>();
-    const warningLines = new Set<number>();
-    const infoLines    = new Set<number>();
+    // Un solo mensaje por línea; prioridad: error > warning > spanglish > info
+    const usedLines = new Set<number>();
+    // El texto va al FINAL de la línea; antes se pegaba al rango y partía el código en dos
+    const eol = (line: number) => {
+      const end = doc.lineAt(line).range.end;
+      return new vscode.Range(end, end);
+    };
 
     // ── Cuenta errores actuales para memoria ─────────────────
     const currentErrors = diags.filter(
@@ -147,8 +151,8 @@ export class XolitoDecorations {
       const lineNum = diag.range.start.line;
 
       if (diag.severity === vscode.DiagnosticSeverity.Error) {
-        if (errorLines.has(lineNum)) continue;
-        errorLines.add(lineNum);
+        if (usedLines.has(lineNum)) continue;
+        usedLines.add(lineNum);
         
         const translation = this.getBarrioTranslation(diag.message);
         const hoverMsg = translation 
@@ -159,9 +163,9 @@ export class XolitoDecorations {
           ? `  🦎🧠 Barrio: ${translation.length > 40 ? translation.slice(0, 37) + '...' : translation}`
           : `  🦎💢 ${this.errorPhrase(diag.message, lang, cameFromBrokenFile)}`;
 
+        errorRanges.push({ range: new vscode.Range(diag.range.start, diag.range.end), hoverMessage: hoverMsg });
         errorRanges.push({
-          range: new vscode.Range(diag.range.start, diag.range.end),
-          hoverMessage: hoverMsg,
+          range: eol(lineNum),
           renderOptions: {
             after: {
               contentText: inlineText,
@@ -169,12 +173,60 @@ export class XolitoDecorations {
           },
         });
       } else if (diag.severity === vscode.DiagnosticSeverity.Warning) {
-        if (warningLines.has(lineNum)) continue;
-        warningLines.add(lineNum);
+        if (usedLines.has(lineNum)) continue;
+        usedLines.add(lineNum);
         warningRanges.push({
-          range: new vscode.Range(diag.range.start, diag.range.end),
+          range: eol(lineNum),
           renderOptions: {
             after: { contentText: `  🦎👀 ${this.warningPhrase(diag.message, lang)}` },
+          },
+        });
+      }
+    }
+
+    // ── Try-Catch Vacíos (Linter Mexicano) ────────────────────
+    const EMPTY_CATCH_PATTERN = /catch\s*(?:\([^)]*\))?\s*\{\s*(?:(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/)\s*)*\}/g;
+    let catchMatch;
+    while ((catchMatch = EMPTY_CATCH_PATTERN.exec(text)) !== null) {
+      const pos     = doc.positionAt(catchMatch.index);
+      const lineNum = pos.line;
+      if (usedLines.has(lineNum)) continue;
+      usedLines.add(lineNum);
+      warningRanges.push({
+        range: eol(lineNum),
+        renderOptions: {
+          after: { contentText: `  🦎💀 ${this.emptyCatchPhrase(lineNum)}` },
+        },
+      });
+    }
+
+    // ── Cast Inseguro !! (Linter Mexicano) ────────────────────
+    const UNSAFE_CAST_PATTERN = /\b[a-zA-Z0-9_$]+!!/g;
+    let castMatch;
+    while ((castMatch = UNSAFE_CAST_PATTERN.exec(text)) !== null) {
+      const pos     = doc.positionAt(castMatch.index);
+      const lineNum = pos.line;
+      if (usedLines.has(lineNum)) continue;
+      usedLines.add(lineNum);
+      warningRanges.push({
+        range: eol(lineNum),
+        renderOptions: {
+          after: { contentText: `  🦎💥 ${this.unsafeCastPhrase(lineNum)}` },
+        },
+      });
+    }
+
+    // ── Spanglish en variables (Linter Mexicano) ──────────────
+    if (lang !== 'markdown') {
+      for (const sm of findSpanglish(text)) {
+        const pos     = doc.positionAt(sm.index);
+        const lineNum = pos.line;
+        if (usedLines.has(lineNum)) continue;
+        usedLines.add(lineNum);
+        warningRanges.push({
+          range: eol(lineNum),
+          renderOptions: {
+            after: { contentText: `  🦎🌶️ Spanglish: Consistencia, elige un idioma.` },
           },
         });
       }
@@ -188,11 +240,10 @@ export class XolitoDecorations {
       while ((match = consolePattern.exec(text)) !== null) {
         const pos     = doc.positionAt(match.index);
         const lineNum = pos.line;
-        if (infoLines.has(lineNum)) continue;
-        infoLines.add(lineNum);
-        const end = doc.positionAt(match.index + match[0].length);
+        if (usedLines.has(lineNum)) continue;
+        usedLines.add(lineNum);
         infoRanges.push({
-          range: new vscode.Range(pos, end),
+          range: eol(lineNum),
           renderOptions: {
             after: { contentText: `  🦎 ${this.debugPhrase(lang, lineNum)}` },
           },
@@ -206,66 +257,14 @@ export class XolitoDecorations {
     while ((match = TODO_PATTERN.exec(text)) !== null) {
       const pos     = doc.positionAt(match.index);
       const lineNum = pos.line;
-      if (infoLines.has(lineNum)) continue;
-      infoLines.add(lineNum);
-      const end = doc.positionAt(match.index + match[0].length);
+      if (usedLines.has(lineNum)) continue;
+      usedLines.add(lineNum);
       infoRanges.push({
-        range: new vscode.Range(pos, end),
+        range: eol(lineNum),
         renderOptions: {
           after: { contentText: `  🦎🧐 ${this.todoPhrase()}` },
         },
       });
-    }
-
-    // ── Try-Catch Vacíos (Linter Mexicano) ────────────────────
-    const EMPTY_CATCH_PATTERN = /catch\s*(?:\([^)]*\))?\s*\{\s*(?:(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/)\s*)*\}/g;
-    let catchMatch;
-    while ((catchMatch = EMPTY_CATCH_PATTERN.exec(text)) !== null) {
-      const pos     = doc.positionAt(catchMatch.index);
-      const lineNum = pos.line;
-      if (warningLines.has(lineNum)) continue;
-      warningLines.add(lineNum);
-      const end = doc.positionAt(catchMatch.index + catchMatch[0].length);
-      warningRanges.push({
-        range: new vscode.Range(pos, end),
-        renderOptions: {
-          after: { contentText: `  🦎💀 ${this.emptyCatchPhrase(lineNum)}` },
-        },
-      });
-    }
-
-    // ── Cast Inseguro !! (Linter Mexicano) ────────────────────
-    const UNSAFE_CAST_PATTERN = /\b[a-zA-Z0-9_$]+!!/g;
-    let castMatch;
-    while ((castMatch = UNSAFE_CAST_PATTERN.exec(text)) !== null) {
-      const pos     = doc.positionAt(castMatch.index);
-      const lineNum = pos.line;
-      if (warningLines.has(lineNum)) continue;
-      warningLines.add(lineNum);
-      const end = doc.positionAt(castMatch.index + castMatch[0].length);
-      warningRanges.push({
-        range: new vscode.Range(pos, end),
-        renderOptions: {
-          after: { contentText: `  🦎💥 ${this.unsafeCastPhrase(lineNum)}` },
-        },
-      });
-    }
-
-    // ── Spanglish en variables (Linter Mexicano) ──────────────
-    if (lang !== 'markdown') {
-      for (const sm of findSpanglish(text)) {
-        const pos     = doc.positionAt(sm.index);
-        const lineNum = pos.line;
-        if (warningLines.has(lineNum)) continue;
-        warningLines.add(lineNum);
-        const end = doc.positionAt(sm.index + sm.length);
-        warningRanges.push({
-          range: new vscode.Range(pos, end),
-          renderOptions: {
-            after: { contentText: `  🦎🌶️ Spanglish: Consistencia, elige un idioma.` },
-          },
-        });
-      }
     }
 
     editor.setDecorations(this.errorDecoration,   errorRanges);
